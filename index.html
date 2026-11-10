@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F5F2EA">
+  <meta name="description" content="沿途画册的公开样式示例。翻阅四座城市的风景插画。">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>沿途画册 · 公开示例</title>
+  <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#collection">跳到城市画册</a>
+  <div class="page">
+    <header class="masthead">
+      <a class="brand" href="./index.html" aria-label="沿途画册首页"><img src="./assets/mark.svg" width="32" height="32" alt="">沿途画册</a>
+      <nav aria-label="主导航"><a href="#collection">翻开画册</a><span class="sample-label">公开示例</span></nav>
+    </header>
+    <main>
+      <section class="opening" aria-labelledby="title">
+        <div class="opening-copy">
+          <p class="opening-note">在路上，留一页。</p>
+          <h1 id="title">把风景，<br>慢慢收藏。</h1>
+          <p class="opening-description">从海边的清晨，走到江南的桥。<br>翻一翻，总有一处想再去。</p>
+          <a class="opening-link" href="#collection">看看沿途风景 <span aria-hidden="true">↓</span></a>
+          <p class="edition">四座城市，五幅风景插画</p>
+        </div>
+        <figure class="opening-art">
+          <button class="art-button" type="button" data-art="zhuhai-morning" data-title="珠海 · 海风刚刚醒来" aria-label="放大珠海海岸插画">
+            <img src="./assets/zhuhai-morning.svg" width="1200" height="900" alt="清晨的珠海海岸，薄云、海岛与沿岸小路" fetchpriority="high">
+            <span class="image-hint">点开看大图 <span aria-hidden="true">⤢</span></span>
+          </button>
+          <figcaption><span>珠海，海风刚刚醒来。</span><small>海边篇</small></figcaption>
+        </figure>
+      </section>
+      <section id="collection" class="collection" aria-labelledby="collection-title">
+        <div class="collection-heading"><div><p>下一页，去哪里？</p><h2 id="collection-title">沿途的几页</h2></div><span id="result-count" aria-live="polite">5 幅插画</span></div>
+        <div class="filters" role="group" aria-label="按城市筛选插画">
+          <button type="button" data-city="all" aria-pressed="true">全部风景</button>
+          <button type="button" data-city="珠海" aria-pressed="false">珠海</button>
+          <button type="button" data-city="湖州" aria-pressed="false">湖州</button>
+          <button type="button" data-city="苏州" aria-pressed="false">苏州</button>
+          <button type="button" data-city="西双版纳" aria-pressed="false">西双版纳</button>
+        </div>
+        <div class="gallery">
+          <figure class="folio folio-wide" data-place="珠海">
+            <button class="art-button" type="button" data-art="zhuhai-morning" data-title="珠海 · 海风刚刚醒来" aria-label="放大珠海海岸插画"><img src="./assets/zhuhai-morning.svg" width="1200" height="900" loading="lazy" alt="清晨海岸上，弯曲的步道通往远处的海岛"><span class="image-hint">放大 <span aria-hidden="true">⤢</span></span></button>
+            <figcaption><h3>珠海</h3><p>沿着海岸，走到天亮。</p></figcaption>
+          </figure>
+          <figure class="folio folio-lake" data-place="湖州">
+            <button class="art-button" type="button" data-art="huzhou-lake" data-title="湖州 · 湖面上的慢时光" aria-label="放大湖州湖景插画"><img src="./assets/huzhou-lake.svg" width="900" height="1100" loading="lazy" alt="湖州的湖面与远山，一艘木船停在芦苇旁"><span class="image-hint">放大 <span aria-hidden="true">⤢</span></span></button>
+            <figcaption><h3>湖州</h3><p>湖很安静，风也是。</p></figcaption>
+          </figure>
+          <figure class="folio folio-bridge" data-place="苏州">
+            <button class="art-button" type="button" data-art="suzhou-bridge" data-title="苏州 · 走过一座小桥" aria-label="放大苏州水乡插画"><img src="./assets/suzhou-bridge.svg" width="1100" height="850" loading="lazy" alt="苏州水乡的拱桥、白墙黛瓦与垂柳倒影"><span class="image-hint">放大 <span aria-hidden="true">⤢</span></span></button>
+            <figcaption><h3>苏州</h3><p>小桥那头，还有一条巷子。</p></figcaption>
+          </figure>
+          <figure class="folio folio-jungle" data-place="西双版纳">
+            <button class="art-button" type="button" data-art="banna-jungle" data-title="西双版纳 · 走进绿色里" aria-label="放大西双版纳雨林插画"><img src="./assets/banna-jungle.svg" width="900" height="1100" loading="lazy" alt="热带雨林里的高大树木、棕榈与被阳光照亮的小路"><span class="image-hint">放大 <span aria-hidden="true">⤢</span></span></button>
+            <figcaption><h3>西双版纳</h3><p>把脚步，交给一片绿。</p></figcaption>
+          </figure>
+          <figure class="folio folio-evening" data-place="珠海">
+            <button class="art-button" type="button" data-art="zhuhai-evening" data-title="珠海 · 赶上一场日落" aria-label="放大珠海日落插画"><img src="./assets/zhuhai-evening.svg" width="1200" height="800" loading="lazy" alt="橘色的落日与海面倒影，岸边有棕榈树的剪影"><span class="image-hint">放大 <span aria-hidden="true">⤢</span></span></button>
+            <figcaption><h3>再看一眼珠海</h3><p>这一页，留给日落。</p></figcaption>
+          </figure>
+          <aside class="margin-note"><span aria-hidden="true">〰</span><p>不急着抵达，<br>沿途就很好。</p><small>一册风景，慢慢翻。</small></aside>
+        </div>
+        <noscript><p class="noscript-note">所有插画已显示。开启 JavaScript 后可以按城市筛选和放大查看。</p></noscript>
+      </section>
+      <section class="preview-note" aria-labelledby="preview-title"><h2 id="preview-title">这一册，是公开示例。</h2><p>画面均为风景插画，不含私人照片和日记。<br>本页用于查看样式和测试访问，尚未接入登录、上传与跨设备同步。</p></section>
+    </main>
+    <footer><span>沿途画册</span><a href="#title">回到开篇 ↑</a></footer>
+  </div>
+  <dialog id="viewer" aria-labelledby="viewer-title">
+    <div class="viewer-top"><h2 id="viewer-title">风景插画</h2><button id="close-viewer" type="button" aria-label="关闭大图">关闭 <span aria-hidden="true">×</span></button></div>
+    <img id="viewer-image" width="1200" height="900" alt="">
+    <p class="viewer-note">风景插画示例</p>
+  </dialog>
+</body>
+</html>
