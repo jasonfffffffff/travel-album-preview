@@ -1,5 +1,6 @@
 export const BUCKET = 'private-album';
 export const PHOTO_MAX = 4 * 1024 * 1024;
+const DESIGN_MAX = 20 * 1024 * 1024;
 
 export function validateConfig(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(key => !['url','key'].includes(key))) {
@@ -32,14 +33,14 @@ export class AlbumApi {
     this.controllers = new Set();
     this.refreshing = null;
   }
-  async request(path, options = {}, { auth = true, refresh = true, binary = false } = {}) {
+  async request(path, options = {}, { auth = true, refresh = true, binary = false, design = false } = {}) {
     const generation = this.generation;
     if (auth && refresh) await this.ensureSession();
     if (generation !== this.generation) throw new DOMException('已结束会话', 'AbortError');
     if (auth && !this.session) throw new ApiError('请重新登录。', 401);
     const controller = new AbortController();
     this.controllers.add(controller);
-    const timeout = setTimeout(() => controller.abort(new DOMException('请求超时，请检查连接后重试', 'TimeoutError')), options.body instanceof Blob ? 120000 : 30000);
+    const timeout = setTimeout(() => controller.abort(new DOMException('请求超时，请检查连接后重试', 'TimeoutError')), design || options.body instanceof Blob ? 120000 : 30000);
     const headers = { apikey: this.config.key, ...options.headers };
     if (auth) headers.Authorization = `Bearer ${this.session.access_token}`;
     if (options.body && !(options.body instanceof Blob)) headers['Content-Type'] = 'application/json';
@@ -60,22 +61,33 @@ export class AlbumApi {
         if (response.status === 429) throw new ApiError('操作较频繁，请稍等再试。', 429);
         throw new ApiError(`后台暂未完成操作（${response.status}）。请检查连接或后台配置。`, response.status);
       }
-      if (binary) {
+      if (binary || design) {
+        const limit = design ? DESIGN_MAX : PHOTO_MAX;
+        const kind = design ? '原画册' : '图片';
         const length = Number(response.headers.get('content-length'));
-        if (length > PHOTO_MAX) { controller.abort(); throw new ApiError('图片大小异常，已停止下载。'); }
+        if (length > limit || !response.body) {
+          controller.abort();
+          throw new ApiError(kind + '大小异常，已停止下载。');
+        }
+        const type = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+        const types = design ? ['application/json', 'application/octet-stream'] : ['image/jpeg', 'image/webp'];
+        if (!types.includes(type)) {
+          controller.abort();
+          throw new ApiError(kind + '格式不符合要求。');
+        }
         const reader = response.body.getReader();
         const chunks = []; let bytes = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           bytes += value.byteLength;
-          if (bytes > PHOTO_MAX || generation !== this.generation) {
-            await reader.cancel(); throw new ApiError('图片下载已停止。');
+          if (generation !== this.generation) throw new DOMException('已结束会话', 'AbortError');
+          if (bytes > limit) {
+            await reader.cancel(); throw new ApiError(kind + '下载已停止。');
           }
           chunks.push(value);
         }
-        const type = response.headers.get('content-type')?.split(';')[0];
-        if (!['image/jpeg', 'image/webp'].includes(type)) throw new ApiError('图片格式不符合要求。');
+        if (generation !== this.generation) throw new DOMException('已结束会话', 'AbortError');
         return new Blob(chunks, { type });
       }
       if (response.status === 204) return null;
@@ -163,6 +175,9 @@ export class AlbumApi {
     method: 'POST', body: blob, headers: { 'Content-Type': blob.type, 'x-upsert': 'false', 'cache-control': '0' }
   }); }
   download(path) { return this.request(`/storage/v1/object/authenticated/${BUCKET}/${path}`, {}, { binary: true }); }
+  downloadDesign() {
+    return this.request('/storage/v1/object/authenticated/album-design/design-v1.json', {}, { design: true });
+  }
   deleteObjects(paths) { return this.request(`/storage/v1/object/${BUCKET}`, { method: 'DELETE', body: JSON.stringify({ prefixes: paths }) }); }
   async listObjects(entry) {
     const prefix = `${entry.owner_id}/${entry.id}`;

@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { AlbumApi, validateConfig, ApiError, PHOTO_MAX } from './api.js';
 import { preparePhoto } from './photos.js';
 import { makeZip, packPhotoBatches } from './zip.js';
+import { OriginalDesign } from './design.js';
 
 const $ = selector => document.querySelector(selector);
 const node = (tag, text, className) => {
@@ -55,6 +56,17 @@ for (const dialog of document.querySelectorAll('dialog')) {
     if (!document.querySelector('dialog[open]')) document.body.classList.remove('dialog-open');
   });
 }
+const original = new OriginalDesign({
+  compose: () => editEntry(),
+  logout: leave,
+  openDialog,
+  canOpen: () => !draft && !inputsActive()
+});
+$('#original-retry').addEventListener('click', () => {
+  if (!user) return;
+  const captured = epoch;
+  void original.load(api, () => current(captured));
+});
 
 try {
   const config = validateConfig(CONFIG);
@@ -79,6 +91,7 @@ $('#login-form').addEventListener('submit', async event => {
     $('#login-form').reset(); $('#login').hidden = true; $('#album').hidden = false;
     $('#identity').textContent = `${label(user.id)}，欢迎回来。`;
     $('#login-status').textContent = ''; signature = '';
+    void original.load(api, () => current(captured));
     await sync(true);
     current(captured);
     timer = setInterval(() => { if (!document.hidden) sync(false); }, 15000);
@@ -90,6 +103,7 @@ $('#login-form').addEventListener('submit', async event => {
 async function leave() {
   if ((draft || hasReplyDraft()) && !confirm('退出会清空本页未保存的文字和照片选择，确定退出？')) return;
   epoch += 1; clearInterval(timer); timer = null;
+  original.clear();
   const exitingApi = api;
   user = null; members = []; entries = []; photos = []; replies = [];
   signature = ''; draft = null; backupState = null; viewerState = null;
@@ -107,6 +121,7 @@ async function leave() {
 $('#logout').addEventListener('click', leave);
 window.addEventListener('pagehide', () => {
   epoch += 1; clearInterval(timer); api?.clear(); revokeAll();
+  original.clear();
   user = null; draft = null; backupState = null; viewerState = null; entries = []; photos = []; replies = []; members = [];
   thumbnailJobs=[]; observer?.disconnect(); $('#backup-link').replaceChildren(); $('#editor-photos').replaceChildren();
   $('#entries').replaceChildren(); $('#large-photo').removeAttribute('src'); $('#entry-form').reset(); $('#login-form').reset();
