@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f2ea"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-fIa8Qp5Zd8d8VQ41H+qjPJ91Xl4OFo8BwIzzTF0XQ4Y='; style-src 'self' 'sha256-AMOrjbcO7VZFXusDMCEj9s4FpHkbb//z67E5ET54gw0='; img-src 'self' blob: data:; frame-src about:; connect-src https://ddzyscymhtgchghepqjr.supabase.co; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>沿途画册</title><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+<title>沿途画册</title><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js?v=20261111-photo1"></script>
 </head><body>
 <a class="skip" href="#entries">跳到画册</a><div class="page">
 <header><a class="brand" href="./index.html">沿途画册</a><span>两个人，慢慢记录。</span></header>
@@ -31,7 +31,7 @@
 <div id="original-frame"></div>
 </section>
 <dialog id="editor" aria-labelledby="editor-title"><form id="entry-form"><div class="dialog-heading"><h2 id="editor-title">写一页</h2><button id="close-editor" type="button">关闭</button></div><label>标题<input id="title" maxlength="100" placeholder="给这一页起个名字，可留空"></label><label>想记下什么<textarea id="body" rows="7" maxlength="20000" placeholder="今天的小事，也值得留一页。"></textarea></label><div class="two-cols"><label>日期（可留空）<input id="day" type="date"></label><label>城市（逗号分隔，最多 8 个）<input id="cities" maxlength="250" placeholder="例如：珠海，苏州"></label></div><label>添加照片（每次最多 6 张）<input id="files" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><p class="fine">上传的是压缩版 JPEG，长边最多 2048 像素；会移除拍摄位置等信息，透明区域转白色。原图请自行保留。每张原文件限 20MB；HEIC 请先转换。</p><div id="editor-photos" class="editor-photos"></div><p id="draft-status" role="status">草稿只留在当前页面，刷新和退出后会清空。</p><p id="save-status" role="alert"></p><button id="save-entry" class="primary" type="submit">保存这一页</button></form></dialog>
-<dialog id="photo-viewer" aria-labelledby="photo-title"><div class="dialog-heading"><h2 id="photo-title">画册照片</h2><button id="close-photo" type="button">关闭</button></div><img id="large-photo" alt="画册照片"></dialog>
+<dialog id="photo-viewer" aria-labelledby="photo-title"><div class="dialog-heading"><h2 id="photo-title" aria-live="polite">画册照片</h2><button id="close-photo" type="button">关闭</button></div><img id="large-photo" alt="画册照片"></dialog>
 <dialog id="original-viewer" aria-labelledby="original-photo-title"><div class="dialog-heading"><h2 id="original-photo-title">原旅行照片</h2><button id="original-photo-close" type="button">关闭</button></div><img id="original-photo" alt=""></dialog>
 <dialog id="backup" aria-labelledby="backup-title"><div class="dialog-heading"><h2 id="backup-title">导出备份</h2><button id="close-backup" type="button">关闭</button></div><p>日记和照片分开下载。照片分成每份最多 32MB 的 ZIP，点一次下载一份，避免手机内存不足。照片为画册中的压缩版本。</p><p id="backup-status" role="status"></p><button id="download-json" type="button">下载日记 JSON</button><button id="download-photos" type="button" hidden>下载照片</button><div id="backup-link"></div><p class="fine">备份包含私人内容，请保存在自己的设备。导出期间请不要在其他设备修改画册；如果有改动，请重新开始备份。</p></dialog>
 </body></html>

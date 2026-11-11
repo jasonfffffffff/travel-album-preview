@@ -164,18 +164,19 @@ async function sync(manual = false) {
   } finally { if (captured === epoch) syncing = false; }
 }
 
-async function thumbnail(blob) {
-  if (typeof createImageBitmap !== 'function') return blob;
-  const image = await createImageBitmap(blob);
-  try {
-    const ratio = Math.min(1, 800 / Math.max(image.width, image.height));
-    const canvas = document.createElement('canvas'); canvas.width = Math.max(1,Math.round(image.width*ratio)); canvas.height = Math.max(1,Math.round(image.height*ratio));
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return blob;
-    ctx.drawImage(image,0,0,canvas.width,canvas.height);
-    const result = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',.75));
-    canvas.width=1;canvas.height=1; return result || blob;
-  } finally { image.close(); }
+function loadPhotoImage(image, url) {
+  return new Promise((resolve, reject) => {
+    const finish = error => {
+      clearTimeout(timer);
+      image.onload = image.onerror = null;
+      if (error) reject(error);
+      else resolve();
+    };
+    const timer = setTimeout(() => finish(new Error('显示照片超时，请重试。')), 15000);
+    image.onload = () => finish();
+    image.onerror = () => finish(new Error('照片无法显示，请重试。'));
+    image.src = url;
+  });
 }
 function queueThumbnail(image, photo, captured) {
   thumbnailJobs.push({ image, photo, captured }); runThumbnail();
@@ -183,20 +184,25 @@ function queueThumbnail(image, photo, captured) {
 async function runThumbnail() {
   if (thumbnailWorkers >= 2 || !thumbnailJobs.length) return;
   const job = thumbnailJobs.shift(); thumbnailWorkers += 1;
+  let url;
   try {
     current(job.captured);
     if (!job.image.isConnected) return;
     const blob = await api.download(job.photo.path);
-    const small = await thumbnail(blob); current(job.captured);
+    current(job.captured);
     if (!job.image.isConnected) return;
-    job.image.src = urlFor(small,true);
+    url = urlFor(blob, true);
+    await loadPhotoImage(job.image, url);
+    current(job.captured);
+    if (!job.image.isConnected) { revoke(url); return; }
     job.image.alt = '画册照片';
+    job.image.hidden = false;
     job.image.parentElement.querySelector('span')?.remove();
   } catch (error) {
+    revoke(url);
     if (job.captured === epoch && job.image.isConnected) {
-      job.image.remove();
-      const parent = document.querySelector(`[data-cover="${job.photo.id}"]`);
-      if (parent) parent.replaceChildren(node('span','照片暂未加载，点这里重试'));
+      const cover = job.image.parentElement;
+      cover.replaceChildren(node('span', '照片暂未加载，点这里重试'));
     }
   } finally { thumbnailWorkers -= 1; runThumbnail(); }
 }
@@ -214,11 +220,12 @@ function render() {
   $('#empty').hidden = filtered.length !== 0;
   $('#more').hidden = filtered.length <= visible;
   const captured = epoch;
-  observer = new IntersectionObserver(changes => {
+  observer = new IntersectionObserver((changes, coverObserver) => {
     for (const change of changes) if (change.isIntersecting) {
-      observer.unobserve(change.target);
-      const photo = photos.find(item=>item.id===change.target.dataset.photo);
-      if (photo) queueThumbnail(change.target,photo,captured);
+      coverObserver.unobserve(change.target);
+      const photo = photos.find(item => item.id === change.target.dataset.cover);
+      const image = change.target.querySelector('img');
+      if (photo && image) queueThumbnail(image, photo, captured);
     }
   }, { rootMargin:'100px' });
   for (const entry of filtered.slice(0,visible)) {
@@ -233,8 +240,8 @@ function render() {
     if (attached.length) {
       const cover = action('',()=>showPhoto(attached,0)); cover.className='cover';cover.dataset.cover=attached[0].id;
       cover.setAttribute('aria-label',`查看这一页的 ${attached.length} 张照片`);
-      const image = node('img'); image.dataset.photo=attached[0].id;image.alt='照片正在加载';
-      cover.append(image,node('span','正在加载照片…')); article.append(cover); observer.observe(image);
+      const image = node('img'); image.alt = ''; image.hidden = true;
+      cover.append(image, node('span', '正在加载照片…')); article.append(cover); observer.observe(cover);
     }
     const meta = node('div',undefined,'entry-meta'); meta.append(node('span',label(entry.owner_id)));if(entry.day)meta.append(node('span',entry.day));
     article.append(meta,node('h2',entry.title || '一页日常'));
@@ -397,18 +404,39 @@ async function deleteEntry(entry) {
 
 const photoNav=node('div',undefined,'photo-nav');
 const previous=action('上一张',()=>loadLarge(-1)),next=action('下一张',()=>loadLarge(1));
-photoNav.append(previous,next);$('#photo-viewer').append(photoNav);
+const retryPhoto = action('重试加载', () => loadLarge(0));
+retryPhoto.hidden = true;
+photoNav.append(previous, next, retryPhoto); $('#photo-viewer').append(photoNav);
 async function showPhoto(attached,index){viewerState={photos:attached,index,url:null,request:0};openDialog($('#photo-viewer'));await loadLarge(0);}
 async function loadLarge(delta){
   if(!viewerState)return;
   const state=viewerState,captured=epoch;state.index=Math.max(0,Math.min(state.photos.length-1,state.index+delta));
   const request=++state.request;previous.disabled=state.index===0;next.disabled=state.index===state.photos.length-1;
-  revoke(state.url);state.url=null;$('#large-photo').removeAttribute('src');$('#photo-title').textContent=`照片 ${state.index+1}/${state.photos.length} · 正在读取`;
-  try{
-    const blob=await api.download(state.photos[state.index].path);current(captured);
-    if(viewerState!==state||request!==state.request)return;
-    state.url=urlFor(blob);$('#large-photo').src=state.url;$('#photo-title').textContent=`照片 ${state.index+1}/${state.photos.length}`;
-  }catch(error){if(captured===epoch&&viewerState===state&&request===state.request)$('#photo-title').textContent=message(error);}
+  const title = `照片 ${state.index + 1}/${state.photos.length}`;
+  const active = () => captured === epoch && viewerState === state && request === state.request;
+  revoke(state.url); state.url = null; $('#large-photo').removeAttribute('src');
+  retryPhoto.hidden = true;
+  $('#photo-title').textContent = title + ' · 正在读取';
+  let url;
+  try {
+    const blob = await api.download(state.photos[state.index].path);
+    if (!active()) return;
+    url = state.url = urlFor(blob);
+    const photo = node('img'); photo.id = 'large-photo'; photo.alt = '画册照片';
+    await loadPhotoImage(photo, url);
+    if (!active()) return;
+    $('#large-photo').replaceWith(photo);
+    $('#photo-title').textContent = title;
+  } catch (error) {
+    revoke(url);
+    if (state.url === url) state.url = null;
+    if (!active()) return;
+    let failure = message(error) || '读取中断，请重试。';
+    if (error.name === 'TimeoutError') failure = '读取照片超时，请检查网络后重试。';
+    if (error instanceof TypeError) failure = '照片连接暂时中断，请检查网络后重试。';
+    $('#photo-title').textContent = title + ' · ' + failure;
+    retryPhoto.hidden = false;
+  }
 }
 $('#close-photo').addEventListener('click',()=>closeDialog($('#photo-viewer')));
 $('#photo-viewer').addEventListener('close',()=>{revoke(viewerState?.url);viewerState=null;$('#large-photo').removeAttribute('src');});
