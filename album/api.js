@@ -32,6 +32,8 @@ export class AlbumApi {
     this.generation = 0;
     this.controllers = new Set();
     this.refreshing = null;
+    this.photoCache = new Map();
+    this.photoPending = new Map();
   }
   async request(path, options = {}, { auth = true, refresh = true, binary = false, design = false } = {}) {
     const generation = this.generation;
@@ -53,6 +55,12 @@ export class AlbumApi {
       if (!response.ok) {
         if (!auth && path.includes('grant_type=password') && [400,401,422].includes(response.status)) {
           throw new ApiError('邮箱或密码不正确，或后台账号尚未启用。', response.status);
+        }
+        if (response.status === 400 && path.startsWith('/storage/v1/object/') && options.method === 'POST') {
+          const detail=await response.json().catch(()=>null);
+          if (String(detail?.statusCode)==='409' || ['Duplicate','ResourceAlreadyExists'].includes(detail?.code || detail?.error)) {
+            throw new ApiError('这张照片已上传，可以继续完成保存。',409);
+          }
         }
         if (response.status === 401) throw new ApiError('登录已失效，请退出后重新登录；未保存的内容仍留在本页。', 401);
         if (response.status === 403) throw new ApiError('没有操作权限，请核对双人账号配置。', 403);
@@ -134,6 +142,7 @@ export class AlbumApi {
     this.generation += 1;
     for (const controller of this.controllers) controller.abort();
     this.controllers.clear(); this.session = null; this.refreshing = null;
+    this.photoCache.clear(); this.photoPending.clear();
   }
   async logout() {
     const token = this.session?.access_token;
@@ -174,11 +183,27 @@ export class AlbumApi {
   upload(path, blob) { return this.request(`/storage/v1/object/${BUCKET}/${path}`, {
     method: 'POST', body: blob, headers: { 'Content-Type': blob.type, 'x-upsert': 'false', 'cache-control': '0' }
   }); }
-  download(path) { return this.request(`/storage/v1/object/authenticated/${BUCKET}/${path}`, {}, { binary: true }); }
+  async download(path) {
+    if (!this.session) throw new ApiError('请重新登录。', 401);
+    if (this.photoCache.has(path)) {
+      const blob=this.photoCache.get(path);this.photoCache.delete(path);this.photoCache.set(path,blob);return blob;
+    }
+    if (this.photoPending.has(path)) return this.photoPending.get(path);
+    const generation=this.generation;
+    const pending=this.request(`/storage/v1/object/authenticated/${BUCKET}/${path}`, {}, { binary: true }).then(blob=>{
+      if(generation!==this.generation)throw new DOMException('已结束会话','AbortError');
+      this.photoCache.set(path,blob);
+      let bytes=[...this.photoCache.values()].reduce((sum,item)=>sum+item.size,0);
+      while(bytes>24*1024*1024){const key=this.photoCache.keys().next().value;bytes-=this.photoCache.get(key).size;this.photoCache.delete(key);}
+      return blob;
+    });
+    this.photoPending.set(path,pending);
+    try{return await pending;}finally{if(this.photoPending.get(path)===pending)this.photoPending.delete(path);}
+  }
   downloadDesign() {
     return this.request('/storage/v1/object/authenticated/album-design/design-v1.json', {}, { design: true });
   }
-  deleteObjects(paths) { return this.request(`/storage/v1/object/${BUCKET}`, { method: 'DELETE', body: JSON.stringify({ prefixes: paths }) }); }
+  deleteObjects(paths) { for(const path of paths)this.photoCache.delete(path); return this.request(`/storage/v1/object/${BUCKET}`, { method: 'DELETE', body: JSON.stringify({ prefixes: paths }) }); }
   async listObjects(entry) {
     const prefix = `${entry.owner_id}/${entry.id}`;
     const all = [];

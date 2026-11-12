@@ -1,5 +1,5 @@
-import { DESIGN_LOCK } from './design-lock.js';
-import { makeZip } from './zip.js';
+import { DESIGN_LOCK } from './design-lock.js?v=20261113-audit1';
+import { makeZip } from './zip.js?v=20261113-audit1';
 
 const $ = selector => document.querySelector(selector);
 const emptyFallback = '这里还是空白。写一页日常，或上传第一张旅途照片。';
@@ -142,7 +142,7 @@ export class OriginalDesign {
     const root = this.roots.get(id);
     const css = element('link');
     css.rel = 'stylesheet';
-    css.href = './original-journal.css';
+    css.href = './original-journal.css?v=20261113-audit1';
     root.replaceChildren(css);
     if (markup) {
       const template = element('template');
@@ -163,7 +163,7 @@ export class OriginalDesign {
     const targets = {
       daily: '#journal-start',
       travel: '#original-travel',
-      album: '#original-archive',
+      album: '#photo-collection',
     };
     for (const link of intro.querySelectorAll('[data-section]')) {
       link.addEventListener('click', () => scrollToSection($(targets[link.dataset.section])));
@@ -173,6 +173,10 @@ export class OriginalDesign {
       event.preventDefault();
       scrollToSection($('#journal-start'));
     });
+    const albumLabel=intro.querySelector('.index-album strong');
+    if(albumLabel)albumLabel.textContent='旅行画册';
+    const tripLabel=intro.querySelector('.index-travel small');
+    if(tripLabel)tripLabel.textContent=`${new Set(design.photos.map(photo=>photo.city)).size} 个目的地，慢慢翻`;
     const start = Date.parse(design.clockStart);
     const days = intro.querySelector('#together-days');
     const time = intro.querySelector('#together-time');
@@ -211,7 +215,7 @@ export class OriginalDesign {
     const months = element('div');
     months.id = 'months';
     const title = element('header', 'folio-title');
-    title.append(element('h2', null, design.captions.title), element('p', null, design.captions.subtitle));
+    title.append(element('h2', null, design.captions.title === '时光相册' ? '旅行画册' : design.captions.title), element('p', null, design.captions.subtitle));
     const [sea, forest, huzhou, suzhou, banna] = design.photos.map(photo => this.folioPhoto(photo));
     const opening = element('div', 'folio-opening');
     opening.append(title, sea, forest);

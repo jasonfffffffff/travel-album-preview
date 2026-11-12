@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f2ea"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-fIa8Qp5Zd8d8VQ41H+qjPJ91Xl4OFo8BwIzzTF0XQ4Y='; style-src 'self' 'sha256-AMOrjbcO7VZFXusDMCEj9s4FpHkbb//z67E5ET54gw0='; img-src 'self' blob: data:; frame-src about:; connect-src https://ddzyscymhtgchghepqjr.supabase.co; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>沿途画册</title><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js?v=20261111-photo1"></script>
+<title>沿途画册</title><link rel="stylesheet" href="./styles.css?v=20261113-audit1"><script type="module" src="./app.js?v=20261113-audit1"></script>
 </head><body>
 <a class="skip" href="#entries">跳到画册</a><div class="page">
 <header><a class="brand" href="./index.html">沿途画册</a><span>两个人，慢慢记录。</span></header>
@@ -22,7 +22,8 @@
 <p id="empty" class="empty" hidden>这里还是空白。写一页日常，或上传第一张旅途照片。</p>
 </section><div id="original-note" hidden></div></div>
 <div id="original-travel" hidden tabindex="-1"></div>
-<div id="original-archive" hidden tabindex="-1" data-view="album"></div>
+<section id="photo-collection" tabindex="-1" aria-label="我们的相册"><div id="original-archive" hidden tabindex="-1" data-view="album"></div>
+<section id="synced-archive" aria-label="按月相册" tabindex="-1"></section></section>
 </section>
 <noscript><p>请打开浏览器的 JavaScript，再登录画册。</p></noscript>
 </main><footer>沿途画册<span>私人内容只在登录后读取</span></footer></div>

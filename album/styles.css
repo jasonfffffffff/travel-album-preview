@@ -26,3 +26,18 @@
   #original-note { margin-top: 0; }
   #original-travel { margin-top: 32px; }
 }
+
+/* Shared archive and photo drafts use the same authenticated records as the diary. */
+#synced-archive { margin-block:48px; scroll-margin-top:20px; }
+#synced-archive>h2 { font-size:clamp(28px,4vw,42px); margin-bottom:28px; }
+.month-section { margin-block:32px; }
+.month-section h3 { margin-bottom:16px; }
+.month-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+.archive-photo { min-width:0; margin:0; }
+.archive-photo .cover { aspect-ratio:3/4; }
+.archive-photo figcaption { margin-block:10px; font-size:12px; line-height:1.8; overflow-wrap:anywhere; }
+.archive-photo>button { font-size:12px; }
+.pending-photo { margin:0; width:120px; }
+.pending-photo img { width:120px; height:140px; object-fit:contain; background:var(--white); }
+.pending-photo figcaption { font-size:11px; overflow-wrap:anywhere; }
+@media(max-width:700px){.month-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}input,select,textarea,.reply-form textarea{font-size:16px}}
