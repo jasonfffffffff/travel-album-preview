@@ -41,3 +41,6 @@
 .pending-photo img { width:120px; height:140px; object-fit:contain; background:var(--white); }
 .pending-photo figcaption { font-size:11px; overflow-wrap:anywhere; }
 @media(max-width:700px){.month-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}input,select,textarea,.reply-form textarea{font-size:16px}}
+
+.boot-status { padding:56px 0; line-height:2; color:var(--muted); }
+.boot-status a { display:inline-block; margin-top:12px; min-height:44px; }

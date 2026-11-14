@@ -1,4 +1,4 @@
-import { PHOTO_MAX } from './api.js?v=20261113-audit1';
+import { PHOTO_MAX } from './api.js?v=20261113-audit2';
 
 export async function preparePhoto(file) {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 20 * 1024 * 1024) {

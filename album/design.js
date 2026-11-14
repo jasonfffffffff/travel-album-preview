@@ -1,5 +1,5 @@
-import { DESIGN_LOCK } from './design-lock.js?v=20261113-audit1';
-import { makeZip } from './zip.js?v=20261113-audit1';
+import { DESIGN_LOCK } from './design-lock.js?v=20261113-audit2';
+import { makeZip } from './zip.js?v=20261113-audit2';
 
 const $ = selector => document.querySelector(selector);
 const emptyFallback = '这里还是空白。写一页日常，或上传第一张旅途照片。';
@@ -142,7 +142,7 @@ export class OriginalDesign {
     const root = this.roots.get(id);
     const css = element('link');
     css.rel = 'stylesheet';
-    css.href = './original-journal.css?v=20261113-audit1';
+    css.href = './original-journal.css?v=20261113-audit2';
     root.replaceChildren(css);
     if (markup) {
       const template = element('template');

@@ -3,11 +3,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f5f2ea"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-fIa8Qp5Zd8d8VQ41H+qjPJ91Xl4OFo8BwIzzTF0XQ4Y='; style-src 'self' 'sha256-AMOrjbcO7VZFXusDMCEj9s4FpHkbb//z67E5ET54gw0='; img-src 'self' blob: data:; frame-src about:; connect-src https://ddzyscymhtgchghepqjr.supabase.co; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>沿途画册</title><link rel="stylesheet" href="./styles.css?v=20261113-audit1"><script type="module" src="./app.js?v=20261113-audit1"></script>
+<title>沿途画册</title><link rel="stylesheet" href="./styles.css?v=20261113-audit2"><script type="module" src="./app.js?v=20261113-audit2"></script>
 </head><body>
 <a class="skip" href="#entries">跳到画册</a><div class="page">
 <header><a class="brand" href="./index.html">沿途画册</a><span>两个人，慢慢记录。</span></header>
 <main>
+<p id="boot-status" class="boot-status" role="status">正在打开画册，网络较慢时请稍候。<br><a href="./index.html?v=20261113-audit2">长时间没有显示？重新加载</a></p>
 <section id="unconfigured" class="welcome" hidden><p class="note">还差一步，故事才会在这里开始。</p><h1>画册尚未连接。</h1><p>登录和同步后台还没有接好。当前页面没有私人内容；接入完成后，只有受邀的两个人可以登录。</p></section>
 <section id="login" class="welcome" hidden><div><p class="note">把日子和风景，留在这里。</p><h1>回到我们的画册。</h1><p>使用管理员为你建立的账号登录。<br>刷新或关闭页面后需要重新登录。</p></div><form id="login-form"><label>邮箱<input id="email" type="email" autocomplete="username" required maxlength="254"></label><label>密码<input id="password" type="password" autocomplete="current-password" required maxlength="512"></label><button class="primary" type="submit">进入画册</button><p id="login-status" role="status"></p><p class="fine">仅限受邀账号，不开放注册。</p></form></section>
 <section id="album" hidden>

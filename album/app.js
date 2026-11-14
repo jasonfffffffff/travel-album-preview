@@ -1,10 +1,11 @@
-import { CONFIG } from './config.js?v=20261113-audit1';
-import { AlbumApi, validateConfig, ApiError, PHOTO_MAX } from './api.js?v=20261113-audit1';
-import { preparePhoto } from './photos.js?v=20261113-audit1';
-import { makeZip, packPhotoBatches } from './zip.js?v=20261113-audit1';
-import { OriginalDesign } from './design.js?v=20261113-audit1';
+import { CONFIG } from './config.js?v=20261113-audit2';
+import { AlbumApi, validateConfig, ApiError, PHOTO_MAX } from './api.js?v=20261113-audit2';
+import { preparePhoto } from './photos.js?v=20261113-audit2';
+import { makeZip, packPhotoBatches } from './zip.js?v=20261113-audit2';
+import { OriginalDesign } from './design.js?v=20261113-audit2';
 
 const $ = selector => document.querySelector(selector);
+$('#boot-status').hidden = true;
 const node = (tag, text, className) => {
   const element = document.createElement(tag);
   if (text !== undefined) element.textContent = text;
