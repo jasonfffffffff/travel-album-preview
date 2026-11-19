@@ -1,8 +1,10 @@
+import { unfoldPaper } from './paper-motion.js?v=1';
+import { cityKey, citySpreads, printsPerSpread, orderPrintBatch } from './paper-book.js?v=4';
 import { CONFIG } from './config.js?v=20261113-audit2';
 import { AlbumApi, validateConfig, ApiError, PHOTO_MAX } from './api.js?v=20261113-audit2';
 import { preparePhoto } from './photos.js?v=20261113-audit2';
 import { makeZip, packPhotoBatches } from './zip.js?v=20261113-audit2';
-import { OriginalDesign } from './design.js?v=20261113-audit2';
+import { OriginalDesign } from './design.js?v=20261119-spaces';
 
 const $ = selector => document.querySelector(selector);
 $('#boot-status').hidden = true;
@@ -17,8 +19,25 @@ const action = (text, callback) => {
   button.addEventListener('click', callback); return button;
 };
 let api, user = null, members = [], entries = [], photos = [], replies = [];
-let epoch = 0, timer = null, syncing = false, signature = '', visible = 12;
+const notesPerWall = 6;
+let wallPage = 0;
+const notesGrid = $('#entries');
+const noteSizes = new ResizeObserver(changes => {
+  if (!notesGrid.offsetWidth) return;
+  const gap = parseFloat(getComputedStyle(notesGrid).columnGap) || 0;
+  for (const {target} of changes) {
+    if (!target.isConnected) continue;
+    const top = parseFloat(getComputedStyle(target).marginTop) || 0;
+    // Six-pixel grid tracks let the next slip sit just below the shortest column.
+    const rows = Math.ceil((target.offsetHeight + top + gap) / 6);
+    target.style.setProperty('--pin-rows', String(rows));
+  }
+  notesGrid.dataset.arranged = '';
+});
+let epoch = 0, timer = null, syncing = false, signature = '';
 let draft = null, saving = false, mutating = false, backupState = null;
+let savedDiaryId = null;
+let savedAlbumPhotoId = null;
 let viewerState = null, observer = null, thumbnailJobs = [], thumbnailWorkers = 0, renderedCity = '';
 function hasReplyDraft() {
   return [...document.querySelectorAll('textarea[data-reply-draft]')].some(field => field.value !== field.dataset.baseline);
@@ -32,6 +51,7 @@ const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai'
 function clearPendingPreviews() {
   for (const url of pendingPreviewUrls) revoke(url);
   pendingPreviewUrls.clear();
+  $('#print-proof').replaceChildren();
 }
 const label = id => members.find(member => member.user_id === id)?.label || '画册成员';
 function current(captured) {
@@ -63,11 +83,70 @@ for (const dialog of document.querySelectorAll('dialog')) {
     if (!document.querySelector('dialog[open]')) document.body.classList.remove('dialog-open');
   });
 }
+const spaces = Array.from(document.querySelectorAll('#album > [data-space]'));
+const spaceLinks = Array.from(document.querySelectorAll('.space-header [data-destination]'));
+const spaceOffsets = new Map();
+let activeSpace = '';
+history.scrollRestoration = 'manual';
+function spaceFromLocation() {
+  const hash = location.hash.slice(1);
+  return spaces.some(panel => panel.dataset.space === hash) ? hash : 'cover';
+}
+function showSpace(name, { record = true, focus = true, restore = false } = {}) {
+  const panel = spaces.find(item => item.dataset.space === name);
+  if (!panel) return;
+  const changing = activeSpace !== name;
+  if (activeSpace && changing) spaceOffsets.set(activeSpace, window.scrollY);
+  if (record && location.hash !== '#' + name) history.pushState(null, '', '#' + name);
+  activeSpace = name;
+  for (const item of spaces) item.hidden = item !== panel;
+  for (const link of spaceLinks) {
+    if (link.dataset.destination === name) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  $('#album-tools').open = false;
+  if (focus) {
+    panel.focus({preventScroll:true});
+    window.scrollTo({top: restore && changing ? spaceOffsets.get(name) || 0 : 0, behavior:'instant'});
+  }
+}
+for (const link of spaceLinks) link.addEventListener('click', event => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  event.preventDefault();
+  showSpace(link.dataset.destination, {restore:true});
+});
+window.addEventListener('hashchange', () => {
+  if (user && activeSpace !== spaceFromLocation()) showSpace(spaceFromLocation(), {record:false, restore:true});
+});
+$('.skip').addEventListener('click', event => {
+  event.preventDefault();
+  const target = user ? spaces.find(panel => panel.dataset.space === activeSpace) : $('#main-content');
+  target?.focus();
+});
+document.addEventListener('click', event => {
+  const tools = $('#album-tools');
+  if (tools.open && !tools.contains(event.target)) tools.open = false;
+  for (const menu of document.querySelectorAll('.note-options[open]')) {
+    if (!menu.contains(event.target)) menu.open = false;
+  }
+});
+$('#album-tools').addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    $('#album-tools').open = false;
+    $('#album-tools summary').focus();
+  }
+});
 const original = new OriginalDesign({
-  compose: () => editEntry(),
+  showSpace,
+  compose: () => { showSpace('daily'); editEntry(); },
+  bookData: () => ({entries,photos}),
+  editTrip: (trip, kind='photos') => editEntry(null,{trip:trip?.key || '',name:trip?.name || '',kind}),
+  viewPhoto: photo => showPhoto([photo],0),
+  observePhoto: cover => observer?.observe(cover),
+  onBookReady: () => { if (observer) renderSyncedArchive(); },
   logout: leave,
   openDialog,
-  canOpen: () => !draft && !inputsActive()
+  canOpen: () => activeSpace === 'cover' && !draft && !inputsActive()
 });
 $('#original-retry').addEventListener('click', () => {
   if (!user) return;
@@ -95,6 +174,7 @@ $('#login-form').addEventListener('submit', async event => {
     const identity = await api.login(email, password);
     if (captured !== epoch) return;
     user = identity.user; members = identity.members;
+    showSpace(spaceFromLocation(), {record:false, focus:false});
     $('#login-form').reset(); $('#login').hidden = true; $('#album').hidden = false;
     $('#identity').textContent = `${label(user.id)}，欢迎回来。`;
     $('#login-status').textContent = ''; signature = '';
@@ -107,11 +187,32 @@ $('#login-form').addEventListener('submit', async event => {
   } finally { if (captured === epoch) button.disabled = false; }
 });
 
+function clearSpaceState() {
+  activeSpace = '';
+  spaceOffsets.clear();
+  wallPage = 0;
+  noteSizes.disconnect();
+  $('#album-tools').open = false;
+  $('#identity').textContent = '';
+  const travel = $('#travel-records');
+  travel.ontoggle = null;
+  travel.open = false;
+  travel.hidden = true;
+  travel.querySelector('summary').textContent = '旅行记录管理';
+  $('#travel-record-list').replaceChildren();
+  delete $('#synced-archive').dataset.month;
+  delete $('#synced-archive').dataset.leaf;
+  $('#city').replaceChildren(new Option('全部城市',''));
+  savedDiaryId = null;
+  savedAlbumPhotoId = null;
+}
 async function leave() {
   if (saving || mutating) {status('正在保存或清理内容，请完成后再退出。');return;}
   if ((draft || hasReplyDraft()) && !confirm('退出会清空本页未保存的文字和照片选择，确定退出？')) return;
   epoch += 1; clearInterval(timer); timer = null;
   original.clear();
+  clearSpaceState();
+  $('#trip-choice').replaceChildren();
   const exitingApi = api;
   user = null; members = []; entries = []; photos = []; replies = [];
   signature = ''; draft = null; backupState = null; viewerState = null;
@@ -130,6 +231,8 @@ $('#logout').addEventListener('click', leave);
 window.addEventListener('pagehide', () => {
   epoch += 1; clearInterval(timer); api?.clear(); revokeAll();
   original.clear();
+  clearSpaceState();
+  $('#trip-choice').replaceChildren();
   user = null; draft = null; backupState = null; viewerState = null; entries = []; photos = []; replies = []; members = [];
   thumbnailJobs=[]; observer?.disconnect(); $('#backup-link').replaceChildren(); $('#editor-photos').replaceChildren();
   $('#synced-archive').replaceChildren();clearPendingPreviews();$('#entries').replaceChildren(); $('#large-photo').removeAttribute('src'); $('#entry-form').reset(); $('#login-form').reset();
@@ -214,19 +317,84 @@ async function runThumbnail() {
     }
   } finally { thumbnailWorkers -= 1; runThumbnail(); }
 }
+function isDiary(entry) {
+  const trip = entry.scrapbook;
+  return !cityKey(trip?.name) && trip?.kind !== 'photos' && trip?.kind !== 'note';
+}
+function setPrintProportion(element, photo) {
+  if (photo.width > 0 && photo.height > 0) {
+    const ratio = Math.min(3, Math.max(0.5, photo.width / photo.height));
+    element.style.setProperty('--print-ratio', String(ratio));
+  }
+}
 function render() {
   observer?.disconnect(); thumbnailJobs = [];
+  noteSizes.disconnect();
+  delete notesGrid.dataset.arranged;
   for (const url of [...thumbnailUrls]) revoke(url);
+  const date = today();
+  $('#empty .postmark').dateTime = date;
+  $('#empty .postmark').textContent = date.replaceAll('-', '.');
   const selected = $('#city').value;
-  const cities = [...new Set(entries.filter(entry=>!entry.deleting).flatMap(entry=>entry.cities))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
-  $('#city').replaceChildren(new Option('全部城市',''),...cities.map(city=>new Option(city,city)));
+  const dailyEntries = [], travelEntries = [];
+  for (const entry of entries) {
+    if (isDiary(entry)) dailyEntries.push(entry);
+    else travelEntries.push(entry);
+  }
+  const cities = [...new Set(dailyEntries.filter(entry=>!entry.deleting).flatMap(entry=>entry.cities))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
+  $('#city').replaceChildren(new Option('全部城市',''), ...cities.map(city=>new Option(city,city)));
   if (cities.includes(selected)) $('#city').value = selected;
-  renderedCity=$('#city').value;
-  const filtered = entries.filter(entry => !$('#city').value || entry.cities.includes($('#city').value));
-  $('#entry-count').textContent = `${filtered.length} 页`;
+  renderedCity = $('#city').value;
+  const receipt = savedDiaryId && dailyEntries.find(entry => entry.id === savedDiaryId);
+  if (receipt && renderedCity && !receipt.cities.includes(renderedCity)) {
+    $('#city').value = renderedCity = '';
+  }
+  const filtered = dailyEntries.filter(entry => !renderedCity || entry.cities.includes(renderedCity));
+  const wallPages = Math.ceil(filtered.length / notesPerWall);
+  if (receipt) wallPage = Math.floor(filtered.indexOf(receipt) / notesPerWall);
+  wallPage = Math.max(0, Math.min(wallPage, wallPages - 1));
+  $('#entry-count').textContent = filtered.length + ' 张便签';
+  $('.wall-filter').hidden = dailyEntries.length === 0;
+  $('#city').closest('label').hidden = cities.length === 0;
   $('#entries').replaceChildren();
   $('#empty').hidden = filtered.length !== 0;
-  $('#more').hidden = filtered.length <= visible;
+  $('#wall-pager').hidden = wallPages < 2;
+  $('#wall-newer').disabled = wallPage === 0;
+  $('#wall-older').disabled = wallPage + 1 >= wallPages;
+  $('#wall-range').textContent = wallPages ? (wallPage + 1) + ' / ' + wallPages : '';
+  const tripManager = $('#travel-records');
+  const tripList = $('#travel-record-list');
+  tripList.replaceChildren();
+  tripManager.hidden = travelEntries.length === 0;
+  tripManager.querySelector('summary').textContent = '旅行记录管理（' + travelEntries.length + '）';
+  let tripLimit = 0;
+  function moreTripRecords() {
+    tripList.querySelector('.more-trips')?.remove();
+    for (const entry of travelEntries.slice(tripLimit, tripLimit + 12)) {
+      const row = node('article', undefined, 'trip-log');
+      const heading = node('h3', entry.scrapbook.name || entry.title || '旅行记录');
+      const info = node('p', [entry.day, label(entry.owner_id), entry.scrapbook.kind === 'note' ? '手写卡' : '旅行照片'].filter(Boolean).join(' · '));
+      row.append(heading, info);
+      if (entry.body) row.append(node('p', entry.body, 'trip-log-body'));
+      if (entry.owner_id === user.id) {
+        const controls = node('div', undefined, 'entry-actions');
+        if (!entry.deleting) controls.append(action('编辑', () => editEntry(entry)));
+        controls.append(action(entry.deleting ? '继续删除' : '删除', () => deleteEntry(entry)));
+        row.append(controls);
+      }
+      if (!entry.deleting) row.append(replySection(entry));
+      tripList.append(row);
+    }
+    tripLimit += 12;
+    if (tripLimit < travelEntries.length) {
+      const more = action('再看 12 条旅行记录', moreTripRecords);
+      more.className = 'more-trips'; tripList.append(more);
+    }
+  }
+  tripManager.ontoggle = () => {
+    if (user && tripManager.open && !tripLimit) moreTripRecords();
+  };
+  if (tripManager.open) moreTripRecords();
   const captured = epoch;
   observer = new IntersectionObserver((changes, coverObserver) => {
     for (const change of changes) if (change.isIntersecting) {
@@ -236,9 +404,11 @@ function render() {
       if (photo && image) queueThumbnail(image, photo, captured);
     }
   }, { rootMargin:'100px' });
-  renderSyncedArchive(captured);
-  for (const entry of filtered.slice(0,visible)) {
+  original.refreshBook();
+  renderSyncedArchive();
+  for (const entry of filtered.slice(wallPage * notesPerWall, (wallPage + 1) * notesPerWall)) {
     const article = node('article',undefined,'entry');
+    article.dataset.paper = ['butter','blush','sage','ivory'][entry.id.charCodeAt(entry.id.length-1) % 4];
     article.id = 'entry-' + entry.id; article.tabIndex = -1;
     const mine = entry.owner_id === user.id;
     if (entry.deleting) {
@@ -249,55 +419,242 @@ function render() {
     const attached = photos.filter(photo=>photo.entry_id===entry.id);
     if (attached.length) {
       const cover = action('',()=>showPhoto(attached,0)); cover.className='cover';cover.dataset.cover=attached[0].id;
+      setPrintProportion(cover, attached[0]);
       cover.setAttribute('aria-label',`查看这一页的 ${attached.length} 张照片`);
       const image = node('img'); image.alt = ''; image.hidden = true;
       cover.append(image, node('span', '正在加载照片…')); article.append(cover); observer.observe(cover);
+      if (attached.length > 1) cover.append(node('small', '1 / ' + attached.length, 'print-count'));
     }
-    const meta = node('div',undefined,'entry-meta'); meta.append(node('span',label(entry.owner_id)));if(entry.day)meta.append(node('span',entry.day));
-    article.append(meta,node('h2',entry.title || '一页日常'));
-    if (entry.body) article.append(node('p',entry.body,'entry-text'));
-    if (entry.cities.length) article.append(node('p',entry.cities.join(' / '),'entry-cities'));
-    const controls = node('div',undefined,'entry-actions');
-    if (attached.length) controls.append(action(`查看 ${attached.length} 张照片`,()=>showPhoto(attached,0)));
-    if (mine) controls.append(action('编辑',()=>editEntry(entry)),action('删除',()=>deleteEntry(entry)));
-    article.append(controls,replySection(entry)); $('#entries').append(article);
-  }
-}
-function renderSyncedArchive(captured) {
-  const archive=$('#synced-archive');archive.replaceChildren();
-  archive.append(node('h2','继续收藏的日子'));
-  const groups=new Map();
-  for (const entry of entries.filter(e=>!e.deleting).sort((a,b)=>(b.day||'').localeCompare(a.day||'')||b.created_at.localeCompare(a.created_at))) {
-    const attached=photos.filter(photo=>photo.entry_id===entry.id);
-    if(!attached.length)continue;
-    const month=entry.day?.slice(0,7)||'';
-    if(!groups.has(month)){
-      const section=node('section',undefined,'month-section');
-      section.append(node('h3',month?`${month.slice(0,4)} 年 ${Number(month.slice(5))} 月`:'未填写日期'));
-      const grid=node('div',undefined,'month-grid');section.append(grid);archive.append(section);groups.set(month,grid);
+    const meta = node('div', undefined, 'entry-meta');
+    meta.append(node('span', label(entry.owner_id)));
+    if (entry.day) {
+      const date = node('time', entry.day.replaceAll('-', '.'), 'ink-date');
+      date.dateTime = entry.day;
+      meta.append(date);
     }
-    attached.forEach((photo,index)=>{
-      const figure=node('figure',undefined,'archive-photo');
-      const cover=action('',()=>showPhoto(attached,index));cover.className='cover';cover.dataset.cover=photo.id;cover.dataset.photo=photo.id;
-      cover.setAttribute('aria-label',`查看${entry.cities.join(' / ')||entry.title||'日常'}照片 ${index+1}`);
-      const image=node('img');image.alt='';image.hidden=true;cover.append(image,node('span','正在加载照片…'));observer.observe(cover);
-      const caption=node('figcaption', [entry.day,entry.cities.join(' / '),entry.title].filter(Boolean).join(' · '));
-      const back=action('回到这页日常',()=>{
-        if(!mayDiscardReplies())return;
-        $('#city').value='';visible=Math.max(12,entries.findIndex(e=>e.id===entry.id)+1);render();
-        const target=document.getElementById('entry-'+entry.id);target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
+    if (mine) {
+      const menu = node('details', undefined, 'note-options');
+      const trigger = node('summary', '···');
+      trigger.setAttribute('aria-label', '编辑或删除这张便签');
+      const options = node('div');
+      options.append(action('编辑便签', () => { menu.open = false; trigger.focus(); editEntry(entry); }),
+        action('删除便签', () => { menu.open = false; trigger.focus(); deleteEntry(entry); }));
+      menu.append(trigger, options);
+      menu.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { menu.open = false; trigger.focus(); }
       });
-      figure.append(cover,caption,back);groups.get(month).append(figure);
-    });
+      meta.append(menu);
+    }
+    article.prepend(meta);
+    if (entry.title) article.append(node('h3', entry.title, 'entry-title'));
+    if (entry.body && (entry.body.length > 200 || entry.body.split('\n').length > 6)) {
+      const full = node('details', undefined, 'note-full');
+      const summary = node('summary');
+      summary.append(node('span', entry.body, 'entry-excerpt'), node('span', '展开全文', 'read-note'), node('span', '收起全文', 'fold-note'));
+      full.append(summary, node('p', entry.body, 'entry-text'));
+      article.append(full);
+    } else if (entry.body) {
+      article.append(node('p', entry.body, 'entry-text'));
+    }
+    if (entry.cities.length) article.append(node('p',entry.cities.join(' / '),'entry-cities'));
+    article.append(replySection(entry, true)); notesGrid.append(article);
   }
-  if(!groups.size)archive.append(node('p','新上传的照片会按发生月份收在这里。','fine'));
+  for (const note of notesGrid.children) noteSizes.observe(note);
+  if (savedDiaryId) {
+    const receipt = document.getElementById('entry-' + savedDiaryId);
+    if (receipt) {
+      savedDiaryId = null;
+      receipt.focus({preventScroll:true});
+      receipt.scrollIntoView({block:'center', behavior:'instant'});
+      receipt.classList.add('just-filed');
+    }
+  }
 }
-$('#city').addEventListener('change',()=>{ if(!mayDiscardReplies()){$('#city').value=renderedCity;return;}visible=12;render(); });
-$('#more').addEventListener('click',()=>{ if(!mayDiscardReplies())return;visible+=12;render(); });
+function renderSyncedArchive() {
+  const archive = $('#synced-archive');
+  function releasePrints(container) {
+    for (const cover of container.querySelectorAll('.album-print')) {
+      observer?.unobserve(cover);
+      const src = cover.querySelector('img')?.src;
+      if (thumbnailUrls.has(src)) revoke(src);
+    }
+  }
+  releasePrints(archive);
+  archive.replaceChildren();
+  const heading = node('div', undefined, 'photo-archive-heading');
+  heading.append(node('h2', '日常相册'));
+  archive.append(heading);
 
-function replySection(entry) {
+  const attachments = new Map();
+  for (const photo of photos) {
+    if (!attachments.has(photo.entry_id)) attachments.set(photo.entry_id, []);
+    attachments.get(photo.entry_id).push(photo);
+  }
+  const months = new Map();
+  const daily = entries.filter(entry => !entry.deleting && isDiary(entry) && attachments.has(entry.id));
+  daily.sort((a, b) => (b.day || '').localeCompare(a.day || '') || b.created_at.localeCompare(a.created_at));
+  for (const entry of daily) {
+    const month = entry.day?.slice(0, 7) || '';
+    if (!months.has(month)) months.set(month, []);
+    const attached = attachments.get(entry.id);
+    attached.forEach((photo, index) => months.get(month).push({entry, attached, photo, index}));
+  }
+
+  const mount = node('div', undefined, 'album-mount');
+  const sheet = node('section', undefined, 'album-sheet');
+  mount.append(sheet);
+  archive.append(mount);
+  const add = action(months.size ? '＋ 收进照片' : '贴第一张日常照片', () => {
+    if (editEntry()) $('#files').click();
+  });
+  if (!months.size) {
+    delete archive.dataset.month;
+    delete archive.dataset.leaf;
+    add.className = 'album-insert';
+    const aperture = node('span', '＋', 'album-aperture');
+    aperture.setAttribute('aria-hidden', 'true');
+    add.prepend(aperture);
+    sheet.classList.add('unused-sheet');
+    sheet.append(add);
+    return;
+  }
+  add.className = 'album-add';
+  heading.append(add);
+
+  const monthLabel = key => key ? key.slice(0, 4) + ' 年 ' + Number(key.slice(5)) + ' 月' : '日期未填';
+  let month = months.has(archive.dataset.month) ? archive.dataset.month : months.keys().next().value;
+  let leaf = Number(archive.dataset.leaf) || 0;
+  const perPage = 6;
+  const savedIndex = savedAlbumPhotoId ? months.get(month).findIndex(item => item.photo.id === savedAlbumPhotoId) : -1;
+  if (savedIndex >= 0) leaf = Math.floor(savedIndex / perPage);
+  const indexBar = node('label', undefined, 'album-index');
+  const monthPicker = node('select');
+  indexBar.append(node('span', '月份'), monthPicker);
+  for (const [key, pictures] of months) {
+    monthPicker.append(new Option(monthLabel(key) + ' · ' + pictures.length + ' 张', key));
+  }
+  monthPicker.value = month;
+  if (months.size > 1) heading.append(indexBar);
+
+  const folio = node('div', undefined, 'album-folio');
+  const pageTitle = node('h3');
+  pageTitle.tabIndex = -1;
+  const total = node('span');
+  folio.append(pageTitle, total);
+  const grid = node('div', undefined, 'album-prints');
+  const navigation = node('nav', undefined, 'album-pagination');
+  navigation.setAttribute('aria-label', '翻看这个月的照片');
+  const previous = action('← 上一页', () => turn(leaf - 1));
+  const next = action('下一页 →', () => turn(leaf + 1));
+  const counter = node('output');
+  counter.setAttribute('aria-live', 'polite');
+  navigation.append(previous, counter, next);
+  sheet.append(folio, grid, navigation);
+
+  function turn(page) {
+    leaf = page;
+    display();
+    pageTitle.focus({preventScroll:true});
+    pageTitle.scrollIntoView({block:'nearest'});
+  }
+  monthPicker.onchange = () => {
+    month = monthPicker.value;
+    leaf = 0;
+    display();
+  };
+
+  function display() {
+    const pictures = months.get(month);
+    const count = Math.ceil(pictures.length / perPage);
+    leaf = Math.min(count - 1, Math.max(0, Math.trunc(leaf)));
+    archive.dataset.month = month;
+    archive.dataset.leaf = String(leaf);
+    pageTitle.textContent = monthLabel(month);
+    total.textContent = pictures.length + ' 张照片';
+    previous.disabled = leaf === 0;
+    next.disabled = leaf === count - 1;
+    navigation.hidden = count === 1;
+    counter.textContent = (leaf + 1) + ' / ' + count;
+    releasePrints(grid);
+    grid.replaceChildren();
+    const prints = pictures.slice(leaf * perPage, (leaf + 1) * perPage);
+    grid.dataset.count = String(prints.length);
+    for (const {entry, attached, photo, index} of prints) {
+      const figure = node('figure', undefined, 'archive-photo');
+      const cover = action('', () => showPhoto(attached, index));
+      cover.className = 'cover album-print';
+      setPrintProportion(figure, photo);
+      cover.dataset.cover = photo.id;
+      cover.dataset.photo = photo.id;
+      const title = entry.title || entry.cities.join('、');
+      cover.setAttribute('aria-label', '放大' + (title || '日常') + '照片 ' + (index + 1));
+      const image = node('img');
+      image.alt = '';
+      image.hidden = true;
+      cover.append(image, node('span', '正在加载照片…'));
+      const caption = node('figcaption');
+      if (title) caption.append(node('strong', title));
+      if (entry.day) {
+        const day = node('time', entry.day.replaceAll('-', '.'));
+        day.dateTime = entry.day;
+        caption.append(day);
+      }
+      const back = action('看这张便签 ↗', () => {
+        if (!mayDiscardReplies()) return;
+        $('#city').value = '';
+        const index = entries.filter(isDiary).findIndex(item => item.id === entry.id);
+        wallPage = Math.max(0, Math.floor(index / notesPerWall));
+        showSpace('daily');
+        render();
+        const target = document.getElementById('entry-' + entry.id);
+        target?.focus({preventScroll:true});
+        target?.scrollIntoView({block:'center'});
+      });
+      caption.append(back);
+      figure.append(cover, caption);
+      grid.append(figure);
+      observer?.observe(cover);
+    }
+  }
+  display();
+  if (savedIndex >= 0) {
+    const print = grid.querySelectorAll('.album-print')[savedIndex % perPage];
+    savedAlbumPhotoId = null;
+    if (activeSpace === 'photos') {
+      print.focus({preventScroll:true});
+      print.scrollIntoView({block:'nearest', behavior:'instant'});
+    }
+  }
+}
+$('#city').addEventListener('change', () => {
+  if (!mayDiscardReplies()) { $('#city').value = renderedCity; return; }
+  wallPage = 0;
+  render();
+});
+function turnWall(delta) {
+  if (!mayDiscardReplies()) return;
+  wallPage += delta;
+  render();
+  const heading = $('#journal-title');
+  heading.focus({preventScroll:true});
+  heading.scrollIntoView({block:'start', behavior:'instant'});
+}
+$('#wall-newer').addEventListener('click', () => turnWall(-1));
+$('#wall-older').addEventListener('click', () => turnWall(1));
+
+function replySection(entry, onWall = false) {
   const list = replies.filter(reply=>reply.entry_id===entry.id);
-  const section = node('details',undefined,'replies'); section.append(node('summary',`留言 ${list.length}`));
+  const section = node('details',undefined,'replies');
+  const summary = node('summary');
+  if (onWall && list.length) {
+    const last = list.at(-1);
+    const slip = node('span', undefined, 'reply-slip');
+    slip.append(node('small', label(last.owner_id)), node('span', last.body));
+    summary.append(slip);
+  }
+  const summaryText = onWall ? (list.length ? list.length + ' 句留言' : '留句话') : '留言 ' + list.length;
+  summary.append(node('span', summaryText, 'reply-toggle'));
+  section.append(summary);
   for (const reply of list) {
     const row = node('div',undefined,'reply'); row.append(node('small',label(reply.owner_id)),node('p',reply.body));
     if (reply.owner_id === user.id) {
@@ -340,16 +697,57 @@ async function finishMutation(text) { mutating=false;status(text);signature='';a
 function lockEditor(locked) {
   for(const input of $('#entry-form').querySelectorAll('input,textarea,select,button')) input.disabled=locked;
 }
-function editEntry(entry=null) {
+function editEntry(entry=null, trip=null, origin=null) {
   if (saving || mutating) return;
   if (draft && !confirm('放弃当前未完成的编辑，打开另一页？')) return;
   clearPendingPreviews();lockEditor(false);$('#entry-form').reset();$('#save-status').textContent='';
   draft={id:entry?.id||crypto.randomUUID(),version:entry?.version??null,exists:!!entry,pending:[],dirty:false};
+  draft.trip=trip || entry?.scrapbook || null;
+  draft.savedPrints=entry?.scrapbook?.prints || [];
+  draft.batch=crypto.randomUUID();
+  const guided=!!draft.trip;
+  $('#editor').classList.toggle('writing-letter', !guided);
+  $('.letterhead').hidden = guided;
+  $('#entry-details').open = guided;
+  $('#entry-details summary').hidden = guided;
+  $('.upload-info').open = false;
+  $('.upload-info').hidden = guided && draft.trip.kind === 'note';
+  $('#trip-fields').hidden=!guided;
+  $('#print-proof').hidden=!guided || draft.trip.kind==='note';
+  $('#title').closest('label').hidden=guided;
+  $('#cities').closest('label').hidden=guided;
+  $('#body').closest('label').hidden=guided && draft.trip.kind!=='note';
+  $('#files').closest('label').hidden=guided && draft.trip.kind==='note';
+  if(guided) {
+    const choices=[...(original.trips?.values() || [])].map(t=>new Option(t.name,t.key));
+    $('#trip-choice').replaceChildren(...choices,new Option('新增城市',''));
+    $('#trip-choice').value=cityKey(draft.trip.name);
+    $('#trip-name-label').hidden=!!$('#trip-choice').value;
+    if (!$('#trip-choice').value) $('#trip-name').value=draft.trip.name || '';
+  }
   $('#title').value=entry?.title||'';$('#body').value=entry?.body||'';$('#day').max=today();$('#day').value=entry ? (entry.day||'') : today();$('#cities').value=entry?.cities.join('，')||'';
-  $('#editor-title').textContent=entry?'编辑这一页':'写一页';$('#save-entry').disabled=false;
+  updateLetterDate();
+  $('#editor-title').textContent = entry ? '编辑便签' : '写张便签';
+  $('#save-entry').textContent = guided ? '保存这一页' : '贴到墙上';
+  $('#save-entry').disabled = false;
   $('#draft-status').textContent='草稿只留在当前页面，刷新和退出后会清空。';
+  if(guided) $('#editor-title').textContent=draft.trip.kind==='note'?'写一张手写卡':draft.trip.name?'把照片贴进'+draft.trip.name:'新增城市页';
   renderEditorPhotos();openDialog($('#editor'));
+  if (!guided) {
+    $('#body').focus({preventScroll:true});
+    unfoldPaper($('#editor'), origin);
+  }
+  return true;
 }
+function updateLetterDate() {
+  const date = $('#day').value;
+  const mark = $('.letterhead .postmark');
+  mark.dateTime = date;
+  mark.textContent = date.replaceAll('-', '.');
+  mark.hidden = !date;
+}
+$('#day').addEventListener('input', updateLetterDate);
+$('#empty').addEventListener('click',event=>editEntry(null, null, event.currentTarget.getBoundingClientRect()));
 $('#new-entry').addEventListener('click',()=>editEntry());
 function renderEditorPhotos() {
   clearPendingPreviews();
@@ -360,8 +758,35 @@ function renderEditorPhotos() {
     const url=urlFor(pending.file);pendingPreviewUrls.add(url);image.src=url;
     const caption=node('figcaption',pending.done?'已上传':pending.file.name);
     const remove=action('移除',()=>{if(saving||mutating)return;draft.pending=draft.pending.filter(item=>item!==pending);draft.dirty=true;renderEditorPhotos();});
+    if(draft.trip) {
+      image.addEventListener('load',()=>{
+        if(draft?.pending.includes(pending)) {pending.wide=image.naturalWidth>image.naturalHeight*1.15;renderProof();}
+      });
+      const words=node('input'); words.maxLength=90;words.value=pending.caption||'';
+      words.placeholder='在白边写一句话';words.setAttribute('aria-label',words.placeholder);
+      words.oninput=()=>{pending.caption=words.value;renderProof();};
+      const move=(delta)=>{
+        const list=draft.pending, index=list.indexOf(pending), to=index+delta;
+        if(to<0 || to>=list.length)return;
+        list.splice(index,1);list.splice(to,0,pending);draft.dirty=true;renderEditorPhotos();
+      };
+      const before=action('前移',()=>move(-1)), after=action('后移',()=>move(1));
+      before.disabled=draft.pending[0]===pending;after.disabled=draft.pending.at(-1)===pending;
+      const main=action(pending.main?'主照片 ✓':'设为主照片',()=>{
+        draft.pending.forEach(p=>{p.main=p===pending;p.detail=p===pending?false:p.detail;});
+        draft.dirty=true;renderEditorPhotos();
+      });
+      const detail=action(pending.detail?'已夹入纸袋':'夹入纸袋',()=>{
+        pending.detail=!pending.detail;if(pending.detail)pending.main=false;
+        draft.dirty=true;renderEditorPhotos();
+      });
+      pending.preview=url;
+      frame.append(image,words,before,after,main,detail,remove);$('#editor-photos').append(frame);
+      continue;
+    }
     frame.append(image,caption,remove);$('#editor-photos').append(frame);
   }
+  renderProof();
   const attached=photos.filter(photo=>photo.entry_id===draft?.id);
   for (let index=0;index<attached.length;index++) {
     const photo=attached[index];
@@ -373,17 +798,63 @@ function renderEditorPhotos() {
         const claimed=await api.update('album_entries',draft.id,draft.version,{updated_at:new Date().toISOString()});current(captured);draft.version=claimed.version;
         await api.deleteObjects([photo.path]);current(captured);
         await api.remove('album_photos',photo.id);current(captured);
-        photos=photos.filter(item=>item.id!==photo.id);renderEditorPhotos();$('#save-status').textContent='这张照片已删除。';signature='';
+        photos=photos.filter(item=>item.id!==photo.id);draft.savedPrints=draft.savedPrints.filter(item=>item.id!==photo.id);renderEditorPhotos();$('#save-status').textContent='这张照片已删除。';signature='';
       }catch(error){if(captured===epoch)$('#save-status').textContent=message(error);}
       finally{if(captured===epoch)mutating=false;}
     }));
   }
 }
+function renderProof() {
+  const proof=$('#print-proof');
+  proof.replaceChildren();
+  if(!draft?.trip || draft.trip.kind==='note' || !draft.pending.length)return;
+  proof.append(node('h3','排版预览'));
+  const selected = $('#trip-choice').value || cityKey($('#trip-name').value);
+  const prints = original.trips?.get(selected)?.prints || [];
+  const before = Math.floor(prints.length / printsPerSpread);
+  const old = prints.slice(before * printsPerSpread).map(item => ({...item, saved:true}));
+  const leaves = node('div', undefined, 'proof-pages');
+  for (const [index, spread] of citySpreads([...old, ...orderPrintBatch(draft.pending)]).entries()) {
+    for (const [side, group] of spread.entries()) {
+      const page = node('div', undefined, 'proof-page ' + (side ? 'right-page' : 'left-page'));
+      page.append(node('p', '第 ' + (before + index + 1) + ' 跨 · ' + (side ? '右页' : '左页'), 'proof-heading'));
+      const layout = node('div', undefined, 'city-photo-layout');
+      for (const item of group) {
+        const figure = node('figure', undefined, 'folio-photo' + (item.wide ? ' landscape' : '') + (item.detail ? ' detail-print' : ''));
+        const img = node('img');
+        img.alt = '';
+        if (item.saved && !item.original) {
+          const cover = node('div', undefined, 'folio-image');
+          img.hidden = true;
+          cover.append(img, node('span', '已贴照片', 'proof-placeholder'));
+          figure.append(cover);
+          cover.dataset.cover = item.photo.id;
+          observer?.observe(cover);
+        } else {
+          img.src = item.original ? original.urls.get(item.original.file) : item.preview;
+          figure.append(img);
+        }
+        if (item.caption) figure.append(node('figcaption', item.caption));
+        layout.append(figure);
+      }
+      page.append(layout);
+      leaves.append(page);
+    }
+  }
+  proof.append(leaves);
+}
+$('#trip-choice').addEventListener('change',()=>{ $('#trip-name-label').hidden=!!$('#trip-choice').value; renderProof(); });
+$('#trip-name').addEventListener('input',renderProof);
 $('#entry-form').addEventListener('input',()=>{if(draft){draft.dirty=true;$('#draft-status').textContent='本页有未保存的改动；刷新或退出会丢失。';}});
 $('#files').addEventListener('change',()=>{
   if(!draft)return;
   if($('#files').files.length>6){$('#files').value='';$('#save-status').textContent='一次最多选择 6 张照片。';return;}
-  draft.pending=[...$('#files').files].map(file=>({id:crypto.randomUUID(),file,done:false}));
+  const chosen=[...$('#files').files];
+  if(!chosen.length)return;
+  if(draft.trip && draft.pending.length+chosen.length>6){$('#save-status').textContent='每次最多贴六张，保存后可以继续补。';return;}
+  const added=chosen.map(file=>({id:crypto.randomUUID(),file,done:false,caption:''}));
+  draft.pending=draft.trip?[...draft.pending,...added]:added;
+  $('#files').value='';
   draft.dirty=true;renderEditorPhotos();
 });
 function mayCloseEditor() {
@@ -393,7 +864,7 @@ function mayCloseEditor() {
 }
 $('#close-editor').addEventListener('click',()=>{if(mayCloseEditor())closeDialog($('#editor'));});
 $('#editor').addEventListener('cancel',event=>{if(!mayCloseEditor())event.preventDefault();});
-$('#editor').addEventListener('close',()=>{if(user){signature='';sync(true);}});
+$('#editor').addEventListener('close', () => { if (user) sync(); });
 
 $('#entry-form').addEventListener('submit',async event=>{
   event.preventDefault();if(!draft||saving||mutating)return;
@@ -401,6 +872,19 @@ $('#entry-form').addEventListener('submit',async event=>{
   if(cities.length>8||cities.some(city=>city.length>30)){$('#save-status').textContent='最多 8 个城市，每个不超过 30 字。';return;}
   if($('#day').value > today()){$('#save-status').textContent='发生日期不能晚于今天。';return;}
   const content={title:$('#title').value.trim(),body:$('#body').value,day:$('#day').value||null,cities};
+  if(draft.trip) {
+    const selected=$('#trip-choice').value;
+    const name=original.trips?.get(selected)?.name || $('#trip-name').value.trim();
+    const key=cityKey(name);
+    if(!key){$('#save-status').textContent='填一个城市名。';return;}
+    const note=draft.trip.kind==='note';
+    if(note && !content.body.trim()){$('#save-status').textContent='在卡片上写一句回忆。';return;}
+    if(!note && !draft.pending.length && !draft.savedPrints.length){$('#save-status').textContent='先选一张要贴进画册的照片。';return;}
+    content.title=name+(note?' · 手写卡':' · 旅行照片');
+    content.cities=[name];
+    content.scrapbook={trip:key,name,kind:note?'note':'photos',prints:[...draft.savedPrints,
+      ...orderPrintBatch(draft.pending).map(({id,caption,main,wide,detail})=>({id,batch:draft.batch,caption:caption||'',main:!!main,wide:!!wide,detail:!!detail}))]};
+  }
   if(!content.title&&!content.body.trim()&&!draft.pending.length&&!photos.some(photo=>photo.entry_id===draft.id)){$('#save-status').textContent='写几句话，或选择一张照片再保存。';return;}
   const captured=epoch,editing=draft;
   saving=true;lockEditor(true);$('#save-status').textContent='正在保存文字…';
@@ -430,7 +914,24 @@ $('#entry-form').addEventListener('submit',async event=>{
       await api.insert('album_photos',{id:pending.id,entry_id:editing.id,owner_id:user.id,path,mime:prepared.mime,bytes:prepared.bytes,width:prepared.width,height:prepared.height});
       current(captured);pending.done=true;
     }
-    current(captured);clearPendingPreviews();draft=null;$('#entry-form').reset();saving=false;closeDialog($('#editor'));status('这一页已保存到画册。');signature='';await sync(true);
+    current(captured);
+    if (content.scrapbook && editing.pending.length) original.latestPrint = content.scrapbook.prints.at(-1).id;
+    if (content.scrapbook) showSpace('travel', {focus:false});
+    else if (activeSpace === 'photos' && editing.pending.length) {
+      $('#synced-archive').dataset.month = content.day?.slice(0, 7) || '';
+      savedAlbumPhotoId = editing.pending[0].id;
+    } else {
+      showSpace('daily', {focus:false});
+      savedDiaryId = editing.id;
+    }
+    clearPendingPreviews();
+    draft = null;
+    $('#entry-form').reset();
+    saving = false;
+    closeDialog($('#editor'));
+    status(content.scrapbook ? '这一页已保存到旅行画册。' : activeSpace === 'photos' ? '照片已收进日常相册。' : '便签已贴到墙上。');
+    signature = '';
+    await sync(true);
   }catch(error){
     if(captured===epoch){
       $('#save-status').textContent=`${editing.exists?'文字可能已经保存，部分照片尚未完成。':''}${message(error)}\n请保留本页；重试会跳过已确认上传的照片。`;

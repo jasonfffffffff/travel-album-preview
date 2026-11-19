@@ -1,0 +1,178 @@
+#album .folio-title {padding:0 0 1.1rem}
+#album .folio-title h2 {font-size:clamp(32px,4.2vw,54px);letter-spacing:.06em}
+#album .folio-title p {margin:.1rem 0 0}
+.scrapbook {max-width:1080px;margin:auto}
+.linen-table {position:relative;aspect-ratio:3/2;background:#e2d6c2 url(./linen-book.webp) center/100% 100%;container-type:inline-size}
+.book-desk {position:absolute;inset:6.7% 6% 9.5% 5.6%;display:grid;grid-template-columns:1fr 1fr;perspective:1500px;isolation:isolate;touch-action:pan-y pinch-zoom;user-select:none}
+.scrap-page {position:relative;min-width:0;height:100%;overflow:hidden;color:#eee9dc}
+.scrap-page[hidden],#entry-form [hidden] {display:none!important}
+#album .scrap-page .folio-photo,.blank-print,.pasted-print {
+  position:absolute;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;
+  margin:0;padding:1.4%;width:67%;height:auto;left:7%;top:12%;aspect-ratio: .75;
+  transform:rotate(-4deg);background:#f0eee6;color:#403d35;border:0;border-radius:1px;
+  box-shadow:.3px .9px 1px #100d0973,2px 4px 5px -3px #100d09ab;
+}
+#album .scrap-page .folio-photo .folio-image,.pasted-print .folio-image {
+  position:relative;flex:1;min-height:0;width:100%;margin:0;padding:0;aspect-ratio:auto;border:none;
+  border-radius:0;overflow:hidden;background:#252622;cursor:zoom-in;color:#f2eee3;
+}
+#album .scrap-page .folio-image img,.pasted-print>img {width:100%;height:100%;object-fit:cover;display:block}
+#album .scrap-page .folio-image img[hidden] {display:none}
+#album .scrap-page .folio-image::after {content:'';position:absolute;inset:0;background:linear-gradient(129deg,#ffffff12,transparent 42%,#ffffff04);pointer-events:none}
+#album .hero .folio-photo figcaption {position:absolute;top:103%;left:1%;color:#d6cebc;letter-spacing:.12em;transform:rotate(1deg)}
+#album .scrap-page figcaption,.blank-caption,.trip-slip,.note-card,.pocket-front {
+  font:400 clamp(13px,1.9cqw,23px)/1.38 "Journal Hand","Kaiti SC",STKaiti,serif;
+}
+#album .scrap-page figcaption,.pasted-print figcaption {padding:1.7% 1%;color:#39352b;overflow-wrap:anywhere}
+#album .scrap-page .folio-photo::before,.blank-print::before {
+  content:'';position:absolute;z-index:2;left:32%;top:-2.8%;width:34%;height:7%;
+  background:linear-gradient(102deg,#e3cf9e91,#ede2c1af 64%,#d4c9a399);transform:rotate(3deg);
+  clip-path:polygon(1% 0,99% 0,98% 15%,100% 29%,98% 48%,100% 66%,98% 86%,99% 100%,0 98%,2% 75%,0 64%,1.5% 41%,0 24%);
+}
+#album .creek .folio-photo {width:53%;left:12%;top:26%;transform:rotate(5deg);padding:1.3% 1.3% 0;aspect-ratio:.71}
+#album .creek figcaption {padding:2% 4% 4%;text-align:center}
+#album .hero .suzhou-photo {transform:rotate(2deg);left:16%;top:20%;width:59%}
+#album .hero .banna-photo {top:10%;width:65%;transform:rotate(-2deg)}
+#album .hero .huzhou-photo {top:18%;width:62%;left:12%}
+.blank-print {left:22%;top:19%;width:55%;aspect-ratio:.82;padding:2%;transform:rotate(3deg);cursor:pointer}
+.blank-window {flex:1;display:grid;place-items:center;background:linear-gradient(128deg,#292b29,#191b1a);color:#c9c9bc;font:300 25px/1 system-ui}
+.blank-caption {padding:.6em 0 .35em;text-align:center}
+.final .blank-print {top:30%;width:58%;left:21%;transform:rotate(-3deg)}
+.trip-slip {position:absolute;left:24%;top:49%;color:#d5c8aa;transform:rotate(-3deg);border-bottom:1px solid #8b847555;padding:.35em 1.4em}
+.paper-pocket {position:absolute;right:7%;bottom:6%;width:40%;height:21%;transform:rotate(-6deg);color:#41382c}
+.note-card,.pocket-front {position:absolute;width:100%;border:0;border-radius:0;cursor:pointer;text-align:left}
+.note-card {inset:0 5% auto;width:90%;height:92%;padding:6% 8%;color:#4f473b;background:repeating-linear-gradient(0deg,#b6a98b2b 0 1px,transparent 1px 1.4em),#e6deca;box-shadow:1px 2px 3px #15110b75;transform:rotate(3deg);transition:transform .35s;text-overflow:ellipsis;overflow:hidden}
+.note-card small {display:block;font:inherit;font-size:.72em;margin-bottom:.3em}
+.note-card span {display:block;font-size:.78em;white-space:pre-line}
+.pulled .note-card {transform:translateY(-60%) rotate(-3deg)}
+.pocket-front {inset:auto 0 0;height:68%;padding:11% 7% 2%;font-size:clamp(11px,1.25cqw,17px);color:#4e3b29;background:linear-gradient(155deg,#dcc59c 0%,#c7a57a 57%,#b4956e);border-top:2px solid #e5d0aa;border-bottom:1px solid #a98b61;box-shadow:1px 2px 2px #100e0c66;clip-path:polygon(0 4%,8% 7%,17% 3%,25% 7%,47% 3%,61% 5%,74% 1%,88% 5%,100% 2%,100% 100%,0 100%)}
+.book-nav {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0;color:#493c30}
+.book-nav button {padding:6px 14px;min-height:44px;background:transparent;font:inherit;color:inherit;border:0;cursor:pointer}
+.book-nav button:disabled {opacity:.4}
+.book-nav output {font:italic 16px Georgia,serif}
+.curl-layer {position:absolute;inset:0;z-index:5;pointer-events:none;transform-style:preserve-3d}
+.curl-layer::before {content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,#000 45%,transparent);opacity:var(--cast,0)}
+.curl-strip {position:absolute;left:0;top:0;height:100%;transform-origin:0 50%;transform-style:preserve-3d}
+.curl-face {position:absolute;inset:0;overflow:hidden;backface-visibility:hidden}
+.curl-face.reverse {transform:rotateY(180deg)}
+.curl-face>.scrap-page,.stationary {position:absolute;top:0;height:100%}
+.stationary {width:50%}
+.curl-layer .scrap-page,.proof-page {background:#272726 url(./linen-book.webp) 10.1% 42%/226.25% 119.33%}
+.curl-layer .right-page {background-position:89% 42%}
+.pasted-print {width:71%;top:12%;left:11%;aspect-ratio:.78;padding:1.8%;height:auto}
+.pasted-print figcaption {min-height:1.3em;line-height:1.35;font-size:clamp(11px,1.5cqw,18px);overflow-wrap:anywhere;white-space:pre-wrap;max-height:4em;overflow:auto}
+.pasted-print img {flex:1;min-height:0}
+.detail-print::after {position:absolute;content:'';inset:auto -3% -2% -3%;height:12%;background:linear-gradient(150deg,#dec6a1,#bd976c);clip-path:polygon(0 0,55% 24%,100% 0,100% 100%,0 100%);pointer-events:none}
+#trip-fields {display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#editor-photos .pending-photo:has(input) {width:min(250px,100%);background:#f1ecdf;padding:9px}
+.pending-photo input {width:100%;margin-block:7px}
+#editor-photos .pending-photo button {padding:4px 6px;min-height:34px}
+#editor-photos .pending-photo:has(input) img {width:100%;height:80px}
+.proof-pages {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;margin:8px 0 16px}
+.proof-page {position:relative;aspect-ratio: .79;container-type:inline-size}
+#original-archive button:focus-visible,.scrapbook button:focus-visible {outline:2px solid #bc953f;outline-offset:2px}
+@media(max-width:700px){
+ .linen-table {aspect-ratio: .76;background-size:200% 100%;background-position:left}
+ .linen-table:has(.book-desk>.right-page:not([hidden])) {background-position:right}
+ .book-desk {inset:6.7% 2% 9.5% 10%;grid-template-columns:1fr}
+ .linen-table:has(.book-desk>.right-page:not([hidden])) .book-desk {inset-inline:2% 10%}
+ .stationary {width:100%}
+ .blank-caption {font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.note-card {transition:none}}
+.paper-pocket .note-card {height:66%;top:-12%;padding:5% 7%;text-align:left}
+.paper-pocket.pulled .note-card {height:112%;top:0%;overflow:auto;transform:translateY(-75%) rotate(-3deg)}
+ .paper-pocket .pocket-front,.detail-print::after {background:transparent url(./kraft-pocket.webp) center/100% 100% no-repeat;border:0;clip-path:none;box-shadow:none;filter:drop-shadow(1px 2px 1px #100e0c70)}
+.paper-pocket .pocket-front {text-align:right;padding-right:11%}
+#album .hero .sea-photo figcaption {display:none}
+
+/* Each sheet has one city and a bounded set of evenly spaced prints. */
+#album .trip-title {
+  position:absolute; top:5%; left:10%; margin:0; max-width:70%;
+  color:#eee6d2; font:400 clamp(20px,3cqw,40px)/1.15 "Journal Hand","Kaiti SC",STKaiti,serif;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.trip-page-number {
+  position:absolute;right:10%;top:6.5%;color:#d3c8b5;font:italic clamp(11px,1.5cqw,16px) Georgia,serif;
+}
+.linen-table.thick-book::after {
+  content:'';position:absolute;z-index:-1;inset:91% 6% 8.2% 6.3%;border-radius:1% 2% 3% 3%;
+  background:repeating-linear-gradient(0deg,#302d26 0 1px,#72634c 1px 2px,#9d8a6c 2px 3px);
+  box-shadow:1px 4px 5px #3c33275b;
+}
+.linen-table {isolation:isolate}
+/* Fixed mounting positions let later prints fill the unused corners. */
+.city-photo-layout {position:absolute;inset:0;pointer-events:none}
+:is(#album,.proof-page) .city-photo-layout .folio-photo {
+  position:absolute;inset:auto;left:11%;top:16%;width:56%;height:56%;min-width:0;min-height:0;
+  display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;
+  padding:1.15% 1.15% 2.4%;margin:0;aspect-ratio:auto;pointer-events:auto;
+  transform:rotate(-2.5deg);background:#f3f0e7;box-shadow:1px 2px 2px #100d0970,3px 5px 5px -4px #18130e;
+}
+:is(#album,.proof-page) .right-page .city-photo-layout .folio-photo:first-child,
+.proof-page.right-page .city-photo-layout .folio-photo:first-child {
+  left:15%;top:23%;width:44%;height:47%;transform:rotate(2.6deg);
+}
+:is(#album,.proof-page) .city-photo-layout .folio-photo:nth-child(2) {
+  left:60%;top:74%;width:32%;height:22%;transform:rotate(3deg);
+}
+:is(#album,.proof-page) .right-page .city-photo-layout .folio-photo:nth-child(2),
+.proof-page.right-page .city-photo-layout .folio-photo:nth-child(2) {
+  left:66%;top:5%;width:28%;height:26%;transform:rotate(-3deg);
+}
+:is(#album,.proof-page) .city-photo-layout .folio-photo.landscape {height:auto;aspect-ratio:1.38}
+:is(#album,.proof-page) .city-photo-layout .folio-photo .folio-image, .proof-page .folio-photo>img {
+  width:100%;flex:1;min-height:0;min-width:0;background:#e9e5dc;
+}
+:is(#album,.proof-page) .city-photo-layout .folio-photo img {width:100%;height:100%;object-fit:contain;display:block;transform:none}
+:is(#album,.proof-page) .city-photo-layout .folio-photo img[hidden] {display:none}
+:is(#album,.proof-page) .city-photo-layout .folio-photo figcaption {
+  margin:0;padding:1.2% 2% 0;line-height:1.2;text-align:center;max-height:2.5em;overflow:hidden;
+  color:#454136;font:400 clamp(11px,1.5cqw,16px)/1.25 "Journal Hand","Kaiti SC",STKaiti,serif;
+}
+#album .left-page .city-photo-layout .folio-photo:not(.trip-upload) figcaption,.city-photo-layout figcaption:empty {display:none}
+@media(min-width:701px) {
+  #album .right-page .trip-title,.left-page .trip-page-controls,.right-page .trip-page-number {visibility:hidden}
+}
+.trip-sheet .blank-print {top:26%;left:17%;width:44%;transform:rotate(2deg)}
+.trip-sheet .paper-pocket {right:11%;bottom:6.5%;height:13%;width:35%;z-index:3}
+.trip-page-controls {position:absolute;left:7%;bottom:2%;z-index:4}
+.trip-text-button {
+  min-height:44px;padding:0 8px;border:0;background:transparent;color:#eee5d0;
+  font:400 clamp(12px,1.55cqw,17px)/1.25 "Journal Hand","Kaiti SC",STKaiti,serif;
+  cursor:pointer;text-decoration:underline;text-decoration-color:#e9dcc470;text-underline-offset:.22em;
+}
+.proof-page .city-photo-layout {inset:0}
+.proof-page {overflow:hidden}
+.proof-page.right-page {background-position:89% 42%}
+.proof-heading {position:absolute;top:4%;left:10%;margin:0;color:#eee6d2;font-size:12px}
+.proof-placeholder {display:grid;place-items:center;flex:1;min-height:0;background:#e8dfca;color:#665942;font-size:11px}
+@media(max-width:700px) {
+  .linen-table.thick-book::after {inset-inline:9% 0}
+  #album .trip-title {font-size:clamp(22px,7cqw,32px)}
+  .trip-sheet .paper-pocket {bottom:8%;width:38%}
+}
+
+.trip-sheet .blank-print.refill-print {
+  left:12%;top:74%;width:34%;height:21%;aspect-ratio:auto;transform:rotate(-3deg);padding:1% 1% .6%;
+}
+.refill-print .blank-window {font-size:clamp(14px,2.1cqw,20px);background:#373930;color:#d9d6c8}
+.refill-print .blank-caption {font-size:clamp(10px,1.1cqw,13px);padding:.3em 0;line-height:1.25}
+
+/* City dividers sit along the edge of the bound pages. */
+#album .folio-title {display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:0 0 7px}
+#album .folio-title h2 {font-family:"Songti SC",STSong,serif;font-weight:500;letter-spacing:.025em;color:#39362d}
+#album .folio-title p {font:14px/1.5 "Journal Hand","Kaiti SC",serif;color:#655f4e}
+.city-tabs {display:flex;justify-content:flex-start;gap:5px;padding:9px 3% 0;overflow-x:auto;scrollbar-width:thin}
+.city-tab {min-height:40px;flex:none;padding:6px 16px;border:1px solid #b8a788;border-bottom:0;border-radius:3px 5px 0 0;
+  background:#e4d9bc;color:#4a4638;letter-spacing:.05em;font:15px/1.2 "Journal Hand","Kaiti SC",serif;box-shadow:inset 0 -4px 4px -4px #715b39}
+.city-tab[aria-current] {background:#71373a;color:#fff3d7;border-color:#71373a;box-shadow:inset 0 1px 0 #b8877955}
+.city-tabs .city-tab:focus-visible {outline:2px solid #315e60;outline-offset:-3px}
+@media(max-width:700px){.city-tabs {gap:3px;padding-inline:0}.city-tab {padding:5px 11px;font-size:14px}#album .folio-title {padding-inline:0;align-items:flex-end}#album .folio-title p {font-size:12px}}
+.trip-sheet .paper-pocket {width:37%;height:15%;bottom:6%;right:8%}
+.paper-pocket .note-card {touch-action:none;cursor:grab;color:#3c342a;box-shadow:0 0 0 1px #d9cdb46b,1px 2px 3px #18120a75}
+.paper-pocket .note-card.lifting {transition:none;cursor:grabbing;transform:translateY(var(--lift)) rotate(2deg)}
+.paper-pocket .note-card small {font-size:clamp(10px,1.35cqw,15px);line-height:1.25}
+.paper-pocket .pocket-front {color:#493124;text-shadow:0 1px 0 #f1d1a188}
+.pocket-page .paper-pocket {width:50%;height:22%;right:8%;bottom:9%;transform:rotate(-5deg)}
+.pocket-page .blank-print {top:15%;left:13%;width:47%;transform:rotate(-4deg)}

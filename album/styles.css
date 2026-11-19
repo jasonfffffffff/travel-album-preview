@@ -9,9 +9,9 @@
 .original-ready .journal-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 26%); gap: clamp(20px, 5vw, 60px); }
 #journal-title { margin: 32px 0 8px; font-family: "Journal Hand", "Kaiti SC", STKaiti, serif; font-weight: 400; font-size: clamp(30px, 4vw, 48px); }
 #original-note { align-self: start; margin-top: 36px; }
-#original-travel { margin-top: 64px; }
+#photo-collection { margin-top: 64px; }
 #original-recovery { margin-block: 14px; }
-#original-intro, #journal-start, #original-travel, #original-archive { scroll-margin-top: 18px; }
+#original-intro, #journal-start, #original-archive, #synced-archive { scroll-margin-top: 18px; }
 
 .original-gift-open { overflow: hidden; }
 #original-gift { position: fixed; inset: 0; z-index: 10; background: #152731; }
@@ -24,7 +24,7 @@
 @media (max-width: 780px) {
   .original-ready .journal-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
   #original-note { margin-top: 0; }
-  #original-travel { margin-top: 32px; }
+  #photo-collection { margin-top: 32px; }
 }
 
 /* Shared archive and photo drafts use the same authenticated records as the diary. */
@@ -44,3 +44,190 @@
 
 .boot-status { padding:56px 0; line-height:2; color:var(--muted); }
 .boot-status a { display:inline-block; margin-top:12px; min-height:44px; }
+
+/* The first diary entry starts on the reverse of the window postcard. */
+.journal-layout:has(#empty:not([hidden])) {display:block}
+.journal-layout:has(#empty:not([hidden])) :is(.filterbar,#original-note) {display:none}
+.daily-postcard {
+  display:flex;align-items:stretch;width:min(100%,740px);min-height:156px;margin:18px 0 26px;
+  padding:12px;background:#fffdf2;color:#453e31;text-align:left;border:1px solid #dbd2bc;
+  box-shadow:1px 3px 5px -3px #69563c65;transform:rotate(-.5deg);
+}
+.postcard-picture {width:40%;flex:none;display:flex;align-items:stretch}
+.postcard-picture:empty {display:none}
+.postcard-picture img {display:block;width:100%;height:clamp(145px,13vw,182px);object-fit:cover;object-position:50% 68%}
+.postcard-writing {align-self:stretch;display:flex;flex:1;min-width:0;flex-direction:column;justify-content:center;padding:4% 5%;margin-left:3%;border-left:1px solid #c6bda7}
+.postcard-prompt {font:400 clamp(17px,2.2vw,27px)/1.45 "Journal Hand","Kaiti SC",STKaiti,serif}
+.postcard-lines {height:1.6em;margin:.4em 0 .7em;border-block:1px solid #d7cfbc}
+.postcard-action {font-size:13px;color:#365d53;text-decoration:underline;text-underline-offset:4px}
+.journal-layout:has(#empty:not([hidden])) + #photo-collection {margin-top:32px}
+@media(max-width:700px) {
+  .daily-postcard {min-height:132px;padding:7px;margin:12px 0 20px}
+  .postcard-picture {width:38%}
+  .postcard-picture img {height:132px}
+  .postcard-writing {padding:3% 4%}
+}
+
+@media(min-width:781px) {
+  .journal-layout:has(#empty:not([hidden])) > section {
+    display:grid;grid-template-columns:minmax(160px,1fr) minmax(0,3fr);
+    align-items:center;gap:5%;padding:26px 2%;border-block:1px solid #d8d2c2;
+  }
+  .journal-layout:has(#empty:not([hidden])) :is(#entries:empty,#more[hidden]) {display:none}
+  .journal-layout:has(#empty:not([hidden])) #journal-title {margin:0}
+  .daily-postcard {margin:0;width:100%}
+}
+
+.daily-postcard,.writing-letter {
+  --card-paper:#fbf7eb;--card-ink:#393e34;--postal-ink:#925240;
+  color:var(--card-ink);background-color:var(--card-paper);
+  background-image:linear-gradient(104deg,#fffcf3ed,#f5f0e4ee),url(./kraft-pocket.webp);
+  background-size:cover,185% 260%;background-position:center,50% 68%;
+}
+.daily-postcard {position:relative;padding:14px;outline:1px solid #fff9;outline-offset:-5px;
+  transform:rotate(-.7deg);box-shadow:0 1px 1px #6d5c4226,3px 8px 11px -9px #433a31aa}
+.postcard-picture {position:relative;width:43%;padding:4px 4px 9px;background:#fffdf6;
+  transform:rotate(-1.2deg);box-shadow:0 1px 2px #48372350}
+.postcard-picture:not(:empty)::after {
+  content:'';position:absolute;top:-3px;left:35%;width:27%;height:11px;transform:rotate(3deg);
+  background:linear-gradient(110deg,#dbcea594,#e8debbbf,#d3c29385);
+  clip-path:polygon(1% 5%,100% 0,98% 35%,100% 75%,99% 100%,0 96%,2% 64%,0 32%);
+}
+.postcard-picture img {height:clamp(164px,15vw,204px)}
+.postcard-writing {position:relative;justify-content:flex-end;padding:58px 5% 10px 4%}
+.postmark {display:inline-block;color:var(--postal-ink);border:1px solid currentColor;border-radius:50%;
+  padding:.62em .75em;box-shadow:inset 0 0 0 2px var(--card-paper),inset 0 0 0 3px currentColor;
+  font:italic 13px/1 Georgia,serif;letter-spacing:.065em;transform:rotate(-8deg);white-space:nowrap}
+.postcard-writing>.postmark {position:absolute;right:5%;top:6%}
+.postcard-prompt {font-size:clamp(18px,2.1vw,27px)}
+.postcard-action {color:#425548;text-decoration-style:dotted}
+.postcard-lines {border-color:#cfc5ae;height:1.3em}
+#editor.writing-letter {position:fixed;width:min(650px,94vw);padding:clamp(20px,4vw,43px);
+  border:1px solid #d9cdb7;border-radius:2px;box-shadow:0 2px 2px #3429173b,0 15px 45px #27201442;
+  color:var(--card-ink)}
+.writing-letter::backdrop {background:#302b20ae}
+.writing-letter .dialog-heading {align-items:baseline;margin:0 0 9px}
+.writing-letter .dialog-heading h2 {font:400 clamp(29px,4vw,39px)/1.25 "Journal Hand","Kaiti SC",STKaiti,serif}
+.writing-letter #close-editor {font-size:13px;color:#605c4f;background:transparent;border:0;padding:5px}
+.letterhead {height:62px;position:relative;display:flex;justify-content:flex-end;align-items:center;
+  gap:6px;border-bottom:1px solid #a79d8966;margin-bottom:19px}
+.letterhead .postmark {z-index:1;margin-right:-14px;transform:rotate(-9deg)}
+#editor-stamp:not(:empty) {display:grid;place-items:center;padding:4px;width:55px;height:47px;background:#fffdf4;
+  outline:1px dashed #b8ab8d;outline-offset:-1px;transform:rotate(5deg);box-shadow:.5px 1px 2px #77684e35}
+#editor-stamp img {width:100%;height:100%;min-height:0;object-fit:cover;object-position:center 68%}
+.writing-letter .letter-body {margin:0}
+.writing-letter .letter-body>span {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%)}
+.writing-letter #body {--ruling:34px;display:block;padding:0 3px;height:calc(var(--ruling)*5 + 1px);margin:0;
+  border:0;border-radius:0;background:repeating-linear-gradient(transparent 0 calc(var(--ruling) - 1px),#a496733f calc(var(--ruling) - 1px) var(--ruling));
+  font:18px/var(--ruling) "Songti SC",STSong,serif;color:#363c32;caret-color:#395745;resize:vertical}
+.writing-letter #body:focus {outline:none}
+.writing-letter #body:focus-visible {box-shadow:-2px 0 #7d8c7666}
+.writing-letter #body::placeholder {color:#79796b}
+#entry-details summary,.upload-info summary {cursor:pointer;color:#52604f;font-size:13px;line-height:1.65;padding:10px 0}
+#entry-details[open] summary {margin-bottom:5px}
+.writing-letter #entry-details {margin-top:12px}
+.writing-letter #entry-details input {background:#fffaf0;border-color:#d6cfbd}
+.writing-letter .attach-photos {position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  min-height:44px;margin:4px 0;color:#3d5445;font-size:14px}
+.writing-letter .attach-photos::before {content:'＋';color:#616e5e;font-size:20px}
+.writing-letter .attach-photos input {position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
+.writing-letter .attach-photos:focus-within {outline:2px solid var(--sea);outline-offset:2px}
+.writing-letter .upload-info {display:inline-block;vertical-align:middle;margin-left:17px}
+.writing-letter .upload-info[open] {display:block;margin:0 0 10px}
+.writing-letter .upload-info summary {font-size:12px;color:#696655}
+.writing-letter .writing-footer {display:flex;align-items:center;justify-content:space-between;gap:16px;
+  border-top:1px solid #cdc3aa;margin-top:14px;padding-top:14px}
+.writing-letter #draft-status {margin:0;max-width:70%;font-size:12px;color:#686757}
+.writing-letter #save-entry {margin:0;white-space:nowrap;background:#374d40;color:#fffdf0;border:0}
+.writing-letter .pending-photo {padding:5px;background:#fffcf4;box-shadow:0 1px 3px #4b442b40}
+.writing-letter .pending-photo img {max-width:100%}
+@media(max-width:700px) {
+  .daily-postcard {padding:9px}
+  .postcard-picture {width:39%;padding:3px 3px 6px}
+  .postcard-picture img {height:148px}
+  .postcard-writing {padding:39px 2% 5px 4%}
+  .postcard-writing>.postmark {font-size:10px;top:3%}
+  .postcard-lines {margin:.35em 0 .55em;height:.9em}
+  .letterhead {height:48px;margin-bottom:14px}
+  .writing-letter #body {--ruling:32px}
+}
+
+/* Cloth outside, linen around the bound pages, writing paper inside. */
+.original-ready {background:#f5f0e4;color:#36392f}
+.original-ready .page {padding-top:18px;padding-bottom:10px}
+#photo-collection:has(#original-archive[hidden]) {display:none}
+#original-archive {background:transparent}
+.original-ready #photo-collection {margin-top:clamp(28px,4.2vw,62px)}
+.travelling-print {position:fixed;z-index:12;pointer-events:none;object-fit:cover;transform-origin:top left;
+  box-shadow:1px 4px 8px #241b1a55;border:3px solid #f3eddf}
+.original-ready #journal-start {padding:30px 0 0;border-top:1px solid #c9c0ad;margin-top:36px}
+.original-ready #journal-start .toolbar {max-width:none;align-items:center;justify-content:flex-end;gap:4px 14px}
+.original-ready .toolbar>span {flex:1;width:auto;text-align:left;font-size:12px}
+.original-ready .toolbar button {border:0;padding:5px 0;min-height:38px;color:#626453;font-size:12px}
+.original-ready .toolbar .primary {background:transparent;color:#703538;text-decoration:underline;text-underline-offset:4px}
+.original-ready .journal-layout:has(#empty:not([hidden]))>section {border-top:0}
+#synced-archive>h2,#journal-title {font-family:"Songti SC",STSong,serif;color:#37392e;letter-spacing:.02em}
+.entries .entry {--card-paper:#fffaf0;--postal-ink:#89503e;position:relative;padding:clamp(17px,2.2vw,30px);
+  background:var(--card-paper);border:1px solid #d8cfb9;border-bottom-color:#b8ae96;box-shadow:1px 3px 0 -1px #e1d8c6,2px 5px 0 -2px #cfc5b2}
+.entry .cover {background:#eee9dd;padding:6px 6px 13px;box-shadow:1px 2px 3px #33241730;transform:rotate(-1.3deg)}
+.entry .entry-meta {align-items:center;margin:5px 0 12px;min-height:28px;color:#656253}
+.entry .ink-date {display:inline-block;font:italic 12px/1.45 Georgia,serif;letter-spacing:.06em;color:#945542;
+  border:1px solid currentColor;border-radius:50%;padding:4px 9px;transform:rotate(-6deg)}
+.entry .entry-text {line-height:2.05;font-family:"Songti SC",STSong,serif;font-size:17px}
+.entry .entry-actions button,.archive-photo>button {border:0;border-bottom:1px dotted #b4ab96;padding:3px 0;min-height:35px;margin-right:7px;font-size:12px}
+#login.welcome {gap:clamp(35px,6vw,86px);align-items:center;padding:clamp(30px,6vw,76px) 0}
+#login>div {color:#f8eacb;min-height:clamp(300px,31vw,450px);display:flex;flex-direction:column;justify-content:center;
+  padding:8% 12% 9%;background:#59292a url(./cloth-cover.webp) 9% 48%/195% auto;box-shadow:2px 3px 0 #cbb496,3px 5px 0 #a9957c,4px 11px 15px -8px #49393069}
+#login>div .note,#login>div>p {color:#efdbb6}
+#login>div h1 {color:#fff0ce;max-width:5.2em;font-size:clamp(38px,5vw,70px);line-height:1.2;margin:16px 0}
+#login-form .primary {background:#652f35;border-color:#652f35}
+.gift-controls button {background:#202321c9;border-color:#ebdfbe78;color:#fff1d6}
+@media(prefers-reduced-motion:no-preference) {
+  .writing-letter[open] .postmark,.just-filed .ink-date {animation:press-date .58s cubic-bezier(.2,.77,.25,1) both}
+  .just-filed {animation:lay-paper .55s ease-out both}
+  @keyframes press-date {0% {opacity:0;transform:translate(5px,-10px) rotate(-19deg) scale(1.42)}44% {opacity:.9;transform:rotate(-6deg) scale(.96)}64% {opacity:1;transform:rotate(-6deg) scale(1.04)}100% {transform:rotate(-6deg) scale(1)}}
+  @keyframes lay-paper {from {opacity:.55;transform:translateY(-12px) rotate(-.9deg)}to {opacity:1;transform:none}}
+}
+@media(max-width:700px){
+  .original-ready .page {padding:10px 13px 0}
+  .original-ready #journal-start .toolbar {justify-content:flex-start;gap:0 13px}
+  .original-ready .toolbar>span {flex:0 0 100%}
+  #login>div {min-height:180px;padding:24px 25px}
+  #login>div h1 {max-width:none}
+}
+#trip-card {width:min(428px,91vw);margin:auto;padding:24px 28px 27px;
+  background:#f3e8cf url(./kraft-pocket.webp) 50% 68%/240% 350%;
+  background-blend-mode:soft-light;border:1px solid #d2bfa0;border-radius:2px;color:#493b2b;box-shadow:0 16px 48px #1d181a50}
+#trip-card::backdrop {background:#29251daf}
+.card-top {display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #ad99775e}
+.card-top span {font-size:12px;letter-spacing:.12em;color:#76654f}
+.card-top button {border:0;padding:5px 0;color:#61513f;font-size:12px}
+#trip-card-title {width:fit-content;margin:20px 0 12px;font:500 39px/1.2 "Songti SC",STSong,serif}
+#card-memories {max-height:42svh;min-height:112px;overflow-y:auto;overscroll-behavior:contain}
+#card-memories article {padding:9px 0 15px}
+#card-memories p {background:repeating-linear-gradient(transparent 0 31px,#ab956c48 31px 32px);
+  font:18px/32px "Journal Hand","Kaiti SC",STKaiti,serif;white-space:pre-wrap;overflow-wrap:anywhere}
+#card-memories .unwritten-card {min-height:98px;color:#7a6c56}
+#card-memories time {font:italic 13px/1.6 Georgia,serif;color:#945541}
+#write-trip-card {background:#70403c;border-color:#70403c;padding:8px 15px;margin-top:20px}
+#entries:has(>.entry:only-child) {grid-template-columns:minmax(0,1fr)}
+#synced-archive {padding-top:24px;border-top:1px solid #c9c0ad}
+#synced-archive>h2 {margin-bottom:16px}
+#synced-archive:has(.first-contact) {display:flex;align-items:center;justify-content:space-between;gap:14px}
+#synced-archive:has(.first-contact)>h2 {margin:0}
+.first-contact {font:15px/1.5 "Journal Hand",STKaiti,serif;border:0;border-bottom:1px dotted #887a63;color:#5f4d3e}
+.month-section h3 {margin-bottom:8px;font:17px/1.5 "Songti SC",serif}
+.month-grid {padding:15px 10px;gap:20px 10px;background:#252420;color:#f4dfb7;
+  border-block:4px solid #252420;background-image:repeating-linear-gradient(90deg,transparent 0 9px,#c8bca5 9px 17px,transparent 17px 24px),repeating-linear-gradient(90deg,transparent 0 9px,#c8bca5 9px 17px,transparent 17px 24px);
+  background-size:100% 5px;background-position:left top,left bottom;background-repeat:no-repeat}
+.archive-photo .cover {background:#32302c;aspect-ratio:4/3}
+.archive-photo .cover img {object-fit:contain}
+.archive-photo figcaption {margin:8px 0 2px;text-align:left;color:#f4dbb0}
+.archive-photo .contact-number {margin-right:8px;font:italic 13px Georgia,serif;color:#ffbd6b}
+.archive-photo>button {min-height:36px;color:#e2d3bc;border-bottom-color:#807669}
+@media(min-width:781px) {
+  #entries>.entry:only-child:has(.cover) {display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr);align-items:start;column-gap:25px}
+  #entries>.entry:only-child:has(.cover)>.cover {grid-column:1;grid-row:1/span 5}
+  #entries>.entry:only-child:has(.cover)>:not(.cover,.replies) {grid-column:2}
+  #entries>.entry:only-child:has(.cover)>.replies {grid-column:1/-1}
+}

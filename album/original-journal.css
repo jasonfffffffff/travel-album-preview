@@ -507,3 +507,8 @@ input::file-selector-button { min-height: 38px; margin-right: 10px; padding: 5px
 :host([data-view="album"]) #album { padding-inline:0; }
 :host([data-view="album"]) .folio-actions { margin-top:22px; }
 :host([data-view="album"]) .folio-image { min-height:44px; }
+:host(#original-note) .margin-note {margin:10px 3px 0;padding:19px 17px 15px;background:#ede3c9;transform:rotate(1.4deg)}
+:host(#original-note) .note-postcard {margin:12px 3px 8px;padding-bottom:9px;transform:rotate(-2deg)}
+:host(#original-note) .note-postcard img {height:130px}
+:host(#original-note) .note-title {font-size:19px}
+:host(#original-note) .margin-note>p:not(.note-title) {font-size:13px;line-height:1.65}

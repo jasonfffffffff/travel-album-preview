@@ -1,0 +1,99 @@
+/* Monthly prints sit in a cloth-bound, ivory-page album. */
+#synced-archive {
+  --album-ink:#343d35; --album-muted:#646a5d; --album-line:#cbc3af;
+  margin:0 auto 3rem;padding:0;border:0;color:var(--album-ink);
+}
+#synced-archive .photo-archive-heading {
+  display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;margin:0 0 20px;
+}
+#synced-archive .photo-archive-heading h2 {
+  flex:1;min-width:4em;font:500 clamp(31px,4.4vw,55px)/1.15 "Songti SC",STSong,serif;
+}
+#synced-archive :is(.album-add,.album-pagination button,.album-index select) {
+  border:1px solid #bbb9a7;min-height:42px;border-radius:2px;background:#faf7ed;
+  color:#3e4e42;font-size:14px;
+}
+#synced-archive .album-add {padding:8px 14px}
+#synced-archive .album-index {display:flex;align-items:center;gap:8px;color:var(--album-muted)}
+#synced-archive .album-index select {width:auto;max-width:100%;margin:0;padding:6px 8px}
+#synced-archive .album-mount {
+  padding:clamp(10px,2.2vw,26px) clamp(9px,1.6vw,20px) clamp(13px,2.1vw,25px) clamp(22px,4.4vw,65px);
+  border-radius:3px 6px 5px 3px;border:1px solid #283d33;background-color:#405549;
+  background-image:linear-gradient(90deg,#1a332a3d 0 2.2%,#b5c7ae29 2.5%,transparent 3%),
+    linear-gradient(#405549ed,#364b40f0),url(./cloth-cover.webp);
+  background-position:center,center,3% 45%;background-size:cover,cover,230% auto;
+  box-shadow:1px 2px 2px #28332855,2px 6px 9px -7px #263b2de6;
+}
+#synced-archive .album-sheet {
+  position:relative;padding:clamp(20px,3.5vw,46px);background:#f8f4e7;
+  background-image:linear-gradient(90deg,#a7997d30,transparent 3%,transparent 96%,#c9c2ad18);
+  box-shadow:2px 2px 0 #d8cdb7,3px 3px 0 #948c7a,4px 4px 0 #e1d8c5;
+}
+#synced-archive .album-folio {display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;
+  margin:0 0 clamp(20px,2.8vw,36px);padding-bottom:12px;border-bottom:1px solid var(--album-line)}
+#synced-archive .album-folio h3 {font:500 clamp(20px,2.2vw,29px)/1.35 "Songti SC",STSong,serif}
+#synced-archive .album-folio span {color:var(--album-muted);font-size:13px}
+#synced-archive .album-prints {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:start;gap:clamp(19px,3vw,40px) clamp(18px,2.7vw,32px)}
+#synced-archive .album-prints[data-count="1"] {grid-template-columns:minmax(0,min(100%,560px));justify-content:center}
+#synced-archive .album-prints:is([data-count="2"],[data-count="4"]) {grid-template-columns:repeat(2,minmax(0,1fr))}
+#synced-archive .archive-photo {
+  --print-height:clamp(180px,21vw,290px);--print-frame:6px;
+  width:min(100%,calc(var(--print-height) * var(--print-ratio,1.25) + 2 * var(--print-frame)));
+  justify-self:center;margin:0;min-width:0;
+}
+#synced-archive .album-prints[data-count="1"] .archive-photo {--print-height:clamp(280px,39vw,460px)}
+#synced-archive .album-print {
+  display:grid;place-items:center;position:relative;box-sizing:content-box;
+  width:calc(100% - 2 * var(--print-frame));aspect-ratio:var(--print-ratio,1.25);
+  overflow:visible;border:0;padding:var(--print-frame);background:#fffdf5;box-shadow:0 1px 2px #302d2052;
+  cursor:zoom-in;color:var(--album-muted);font-size:13px;
+}
+#synced-archive .album-print img {display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;background:#fffdf5}
+#synced-archive .album-print img[hidden] {display:none}
+#synced-archive .album-print::before,#synced-archive .album-print::after {
+  position:absolute;content:'';width:17px;height:17px;pointer-events:none;
+  background:linear-gradient(135deg,#313f33,#596250 46%,#29362c 53%,#3e4d40);z-index:1;
+}
+#synced-archive .album-print::before {left:-2px;top:-2px;clip-path:polygon(0 0,100% 0,0 100%)}
+#synced-archive .album-print::after {right:-2px;bottom:-2px;clip-path:polygon(100% 0,100% 100%,0 100%)}
+#synced-archive .archive-photo figcaption {display:flex;align-items:baseline;flex-wrap:wrap;gap:1px 9px;margin:8px 0 0;color:var(--album-muted);font-size:12px}
+#synced-archive .archive-photo figcaption strong {
+  flex-basis:100%;font:500 17px/1.45 "Songti SC",STSong,serif;color:var(--album-ink);overflow-wrap:anywhere;
+}
+#synced-archive .archive-photo time {font:italic 12px/1.5 Georgia,serif}
+#synced-archive .archive-photo figcaption button {margin-left:auto;padding:4px 1px;min-height:36px;
+  background:transparent;color:#435c4c;border:0;text-decoration:underline;text-decoration-color:#a5ae98;text-underline-offset:4px;font-size:12px}
+#synced-archive .album-pagination {display:flex;justify-content:center;align-items:center;gap:15px;margin-top:20px;padding-top:14px;border-top:1px solid var(--album-line)}
+#synced-archive .album-pagination[hidden] {display:none}
+#synced-archive .album-pagination button {background:transparent;border:0;padding:8px 12px}
+#synced-archive .album-pagination output {font:italic 15px Georgia,serif}
+#album #synced-archive:has(.unused-sheet) {max-width:780px;margin-inline:auto}
+#synced-archive .unused-sheet {
+  display:grid;place-items:center;min-height:clamp(245px,29vw,344px);padding:25px;
+}
+#synced-archive .album-insert {
+  position:relative;z-index:0;width:clamp(173px,20vw,226px);padding:8px 8px 14px;
+  border:0;box-shadow:0 2px 4px #40382b3d,5px 5px 0 #e5e0d1,6px 6px 2px #a99f8a70;
+  background:#fffdf5;color:#3b4a3e;transform:rotate(-2deg);
+  font:17px/1.5 "Journal Hand","Kaiti SC",STKaiti,serif;
+}
+#synced-archive .album-aperture {display:grid;place-items:center;aspect-ratio:1.38;margin:0 0 9px;
+  background:linear-gradient(146deg,#53605d,#2b3534);color:#e2dfd1;font:26px/1 system-ui}
+@media(max-width:760px) {
+  #synced-archive .album-prints {grid-template-columns:repeat(2,minmax(0,1fr))}
+  #synced-archive .archive-photo {--print-frame:4px}
+}
+@media(max-width:500px) {
+  #synced-archive .photo-archive-heading {gap:6px 10px;margin-bottom:14px}
+  #synced-archive .album-index {flex-basis:100%}
+  #synced-archive .album-mount {padding:8px 7px 12px 15px}
+  #synced-archive .album-sheet {padding:17px 12px 19px}
+  #synced-archive .album-prints {gap:15px 10px}
+  #synced-archive .album-print::before,#synced-archive .album-print::after {width:13px;height:13px}
+  #synced-archive .archive-photo figcaption {gap:2px 5px}
+  #synced-archive .archive-photo figcaption strong {font-size:15px}
+  #synced-archive .archive-photo figcaption button {margin-left:0}
+  #synced-archive .album-folio {margin-bottom:19px}
+  #synced-archive .unused-sheet {padding:25px 12px}
+}
