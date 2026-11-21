@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f6eadb">
+<title>这次约会，你来选</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{color-scheme:light;--paper:#f6eadb;--ink:#321d1b;--red:#982c40;--line:#ddc7b5}
+body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:24px 22px;background:radial-gradient(ellipse at 50% 15%,#fff9ed,transparent 62%),var(--paper);color:var(--ink);font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif}
+main{width:min(100%,390px);text-align:center}
+.brand{margin:0 auto 32px;display:inline-block;color:var(--red);font-size:14px;letter-spacing:.18em;border-block:1px solid var(--line);padding:10px 14px}
+h1,h2,p{margin:0}
+h1,h2{font-family:"Songti SC","Noto Serif CJK SC","SimSun",serif;font-weight:800}
+h1{font-size:clamp(38px,11vw,55px);line-height:1.2;letter-spacing:-.045em}
+h1 span{display:block;color:var(--red)}
+.intro{margin:18px 0 24px;font-size:16px;color:#674843}
+.choices{display:grid;gap:12px}
+button{cursor:pointer;font:inherit;touch-action:manipulation}
+.choice{display:flex;align-items:center;text-align:left;gap:15px;min-height:76px;padding:12px 16px;border:1px solid transparent;border-radius:16px;font-size:21px;font-weight:700;box-shadow:0 5px 0 #321d1b17}
+.choice:active{transform:translateY(2px);box-shadow:0 3px 0 #321d1b17}
+.cinema{background:var(--red);color:#fff9ee}
+.sushi{background:#fff8eb;border-color:#d6b9a4;color:var(--ink)}
+.icon{display:grid;place-items:center;width:42px;height:42px;flex:none;background:#ffffff25;border-radius:11px;font-size:23px}
+.sushi .icon{background:#efd8cc}
+.foot{margin:26px auto 0;color:#674843;font-size:16px}
+.card{overflow:hidden;border-radius:18px;box-shadow:0 14px 36px #3b171a26;background:#fff8eb;text-align:left}
+.card:focus{outline:none}
+.card:focus-visible{outline:2px solid var(--ink);outline-offset:5px}
+.card.reveal{animation:reveal .48s cubic-bezier(.2,.8,.25,1) both;transform-origin:50% 5%}
+@keyframes reveal{from{opacity:.35;transform:perspective(750px) rotateX(-42deg) translateY(17px) scale(.94)}to{opacity:1;transform:none}}
+.poster{position:relative;overflow:hidden;padding:25px 24px 28px;color:#fff8eb;background:#91283c;text-align:center}
+.poster small{font-size:15px;letter-spacing:.15em}
+.poster h2{margin:5px 0 16px;font-size:48px;line-height:1.12;letter-spacing:.02em}
+.poster p{font-size:20px;font-weight:700}
+.poster .art{display:grid;place-items:center;width:96px;height:96px;margin:0 auto 14px;border-radius:50%;background:#ffdec6;color:#5b2131;font-size:50px;box-shadow:0 0 0 7px #ffffff24,0 0 0 16px #ffffff12}
+.menu .poster{background:#354c37}
+.menu .art{background:#f5e2bf}
+.stub{position:relative;border-top:2px dashed #bb9386;padding:20px 24px}
+.stub::before,.stub::after{content:"";position:absolute;top:-10px;width:17px;height:17px;border-radius:50%;background:var(--paper)}
+.stub::before{left:-9px}.stub::after{right:-9px}
+dl{display:grid;gap:10px;margin:0}
+dl div{display:flex;justify-content:space-between;font-size:16px}
+dt{color:#674843}
+dd{margin:0;font-weight:700}
+.stub p{border-top:1px solid var(--line);margin-top:16px;padding-top:14px;font-size:17px;font-weight:700;color:var(--red);text-align:center}
+.back{margin-top:17px;padding:10px 20px;min-height:44px;border:1px solid var(--line);border-radius:999px;background:#fff8eb;color:var(--ink);font-size:16px}
+@media (max-height:660px){body{padding-block:15px}.brand{margin-bottom:20px}.poster{padding-block:16px}.poster .art{width:72px;height:72px;font-size:40px}}
+@media (prefers-reduced-motion:reduce){.card.reveal{animation:none}}
+</style>
+</head>
+<body>
+<main>
+<p class="brand">约会邀请</p>
+<section id="home" aria-labelledby="title">
+<h1 id="title">这次约会，<span>你来选</span></h1>
+<p class="intro">今天想和我做什么？</p>
+<div class="choices">
+<button class="choice cinema" type="button" data-choice="movie"><span class="icon" aria-hidden="true">🎬</span><span class="choice-label">一起看电影</span></button>
+<button class="choice sushi" type="button" data-choice="menu"><span class="icon" aria-hidden="true">🍣</span><span class="choice-label">一起吃寿司</span></button>
+</div>
+<p class="foot">选好后我们再定</p>
+</section>
+<section id="result" hidden>
+<article id="card" class="card" tabindex="-1" aria-labelledby="result-title">
+<header class="poster">
+<small>这次就选</small>
+<h2 id="result-title"></h2>
+<div class="art" aria-hidden="true"></div>
+<p id="picked"></p>
+</header>
+<div class="stub">
+<dl>
+<div><dt id="detail-label"></dt><dd>待定</dd></div>
+<div><dt>时间</dt><dd>待定</dd></div>
+</dl>
+<p>选好后我们再定</p>
+</div>
+</article>
+<button class="back" type="button">重新选</button>
+</section>
+</main>
+<script>
+const options = {
+  movie: { title: '电影票', label: '片名', icon: '🎟️' },
+  menu: { title: '寿司菜单', label: '店名', icon: '🍣' }
+};
+const home = document.querySelector('#home');
+const result = document.querySelector('#result');
+const card = document.querySelector('#card');
+let lastChoice;
+for (const button of home.querySelectorAll('button')) {
+  button.addEventListener('click', () => {
+    lastChoice = button;
+    const key = button.dataset.choice;
+    const option = options[key];
+    document.querySelector('#result-title').textContent = option.title;
+    document.querySelector('#picked').textContent = button.querySelector('.choice-label').textContent;
+    document.querySelector('#detail-label').textContent = option.label;
+    card.querySelector('.art').textContent = option.icon;
+    card.classList.toggle('menu', key === 'menu');
+    home.hidden = true;
+    result.hidden = false;
+    card.classList.add('reveal');
+    card.focus({ preventScroll: true });
+  });
+}
+document.querySelector('.back').addEventListener('click', () => {
+  result.hidden = true;
+  card.classList.remove('reveal');
+  home.hidden = false;
+  lastChoice.focus({ preventScroll: true });
+});
+</script>
+</body>
+</html>
